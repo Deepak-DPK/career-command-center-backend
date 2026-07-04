@@ -4,8 +4,17 @@ import io
 import requests
 import os
 import time
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # for testing
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 CREWAI_ENDPOINT = os.getenv("CREWAI_ENDPOINT")
 CREWAI_API_KEY = os.getenv("CREWAI_API_KEY")
