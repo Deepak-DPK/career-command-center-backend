@@ -60,7 +60,7 @@ async def generate_prep_kit(
         }
         
         # Kick off the sequential crew agents workflow
-        result = CareerCommandCenterCrew().crew().kickoff(inputs=inputs)
+        result = await CareerCommandCenterCrew().crew().kickoff_async(inputs=inputs)
         
         # Ensure we have enough tasks outputs to parse
         if not result or not result.tasks_outputs or len(result.tasks_outputs) < 7:
