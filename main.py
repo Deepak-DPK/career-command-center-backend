@@ -4,8 +4,8 @@ import io, requests, os
 
 app = FastAPI()
 
-CREWAI_ENDPOINT = os.getenv("CREWAI_ENDPOINT")
-CREWAI_API_KEY = os.getenv("CREWAI_API_KEY")
+CREWAI_ENDPOINT = os.getenv("https://career-command-center-v1-745f910e-a809-4c93-5562140f.crewai.com")
+CREWAI_API_KEY = os.getenv("42ca4cc24484")
 
 
 def extract_pdf_text(file_bytes):
