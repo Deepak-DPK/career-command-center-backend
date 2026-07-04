@@ -56,7 +56,7 @@ ats_optimization_analysis:
   - resume_gap_analysis
 generate_interview_questions:
   description: |-
-    Using the skill gap analysis and ATS optimization analysis provided, generate 5 targeted interview questions for the candidate applying to the following role.
+    Using the skill gap analysis provided, generate 5 targeted interview questions for the candidate applying to the following role.
 
     **Job Description:**
     {job_description}
@@ -79,10 +79,9 @@ generate_interview_questions:
   agent: the_recruiter___hiring_manager_simulator
   context:
   - resume_gap_analysis
-  - ats_optimization_analysis
 generate_pushback_questions:
   description: |-
-    Using the skill gap analysis and the interview questions already generated, create 3 hard-hitting pushback questions that a skeptical interviewer would use to challenge this specific candidate.
+    Using the skill gap analysis provided, create 3 hard-hitting pushback questions that a skeptical interviewer would use to challenge this specific candidate.
 
     **Job Description:**
     {job_description}
@@ -102,10 +101,9 @@ generate_pushback_questions:
   agent: the_red_teamer___stress_interviewer
   context:
   - resume_gap_analysis
-  - generate_interview_questions
 salary_negotiation_strategy:
   description: |-
-    Using the full candidate profile — skill gaps, ATS score, interview questions, and pushback questions — build a comprehensive salary negotiation preparation kit for this candidate.
+    Using the candidate profile and job description, build a comprehensive salary negotiation preparation kit for this candidate.
 
     **Job Description:**
     {job_description}
@@ -138,35 +136,30 @@ salary_negotiation_strategy:
   agent: the_salary_negotiator___hr_compensation_strategy_specialist
   context:
   - resume_gap_analysis
-  - ats_optimization_analysis
-  - generate_interview_questions
-  - generate_pushback_questions
 generate_interview_coaching_report:
   description: |-
-    Using ALL prior outputs — the skill gap analysis, ATS optimization analysis, 5 interview questions, 3 pushback questions, and salary negotiation strategy — create a comprehensive, final interview preparation report for this candidate.
+    Using the prior outputs — the skill gap analysis, interview questions, pushback questions, and salary negotiation strategy — create a comprehensive, final interview preparation report for this candidate.
 
     **Job Description:**
     {job_description}
 
     The report must include the following sections in markdown format:
 
-    1. **Executive Summary** — A 3-sentence overview of the candidate's readiness for this role, referencing the ATS score.
+    1. **Executive Summary** — A 3-sentence overview of the candidate's readiness for this role.
     2. **Strengths to Lead With** — Bullet points of the strongest skills and experiences the candidate should highlight early.
-    3. **ATS Score Summary** — Brief section referencing the ATS score, what drove it, and the top 3 resume improvements the candidate should make before applying.
-    4. **STAR Method Answer Frameworks** — For EACH of the 5 interview questions, provide a full STAR framework. CRITICAL RULE: Every single STAR answer MUST reference one of the candidate's actual named projects from their resume (e.g., "In my Docker Container Escape Detection project...", "During the VIT-EfficientNet framework development..."). Do NOT write hypothetical or generic answers. Situation and Task must be grounded in real resume content. Action must describe what they actually did. Result must reference a real outcome.
-    5. **Handling the Tough Questions** — For each of the 3 pushback questions, provide a strategy and complete suggested phrasing. The phrasing must be specific, not generic — reference actual skills and projects.
-    6. **Salary Negotiation Cheat Sheet** — Top 3 negotiation tips and the complete, specific suggested response for "What is your expected salary?" (use the actual salary range from the negotiation strategy output).
-    7. **Weakness Reframing** — How to address the top 2–3 missing skills honestly but constructively, with specific example sentences.
-    8. **Confidence and Mindset Strategies** — 3–5 practical tips for interview day performance, pacing, and composure.
-    9. **Final Action Plan** — A short prioritized list of things the candidate should study, practice, or fix on their resume before the interview.
-  expected_output: A well-structured, detailed markdown report covering all 9 sections.
+    3. **STAR Method Answer Frameworks** — For EACH of the 5 interview questions, provide a full STAR framework. CRITICAL RULE: Every single STAR answer MUST reference one of the candidate's actual named projects from their resume (e.g., "In my Docker Container Escape Detection project...", "During the VIT-EfficientNet framework development..."). Do NOT write hypothetical or generic answers. Situation and Task must be grounded in real resume content. Action must describe what they actually did. Result must reference a real outcome.
+    4. **Handling the Tough Questions** — For each of the 3 pushback questions, provide a strategy and complete suggested phrasing. The phrasing must be specific, not generic — reference actual skills and projects.
+    5. **Salary Negotiation Cheat Sheet** — Top 3 negotiation tips and the complete, specific suggested response for "What is your expected salary?" (use the actual salary range from the negotiation strategy output).
+    6. **Weakness Reframing** — How to address the top 2–3 missing skills honestly but constructively, with specific example sentences.
+    7. **Confidence and Mindset Strategies** — 3–5 practical tips for interview day performance, pacing, and composure.
+    8. **Final Action Plan** — A short prioritized list of things the candidate should study, practice, or fix on their resume before the interview.
+  expected_output: A well-structured, detailed markdown report covering all 8 sections.
     Every STAR answer must reference a real project from the resume by name. The salary
     cheat sheet must include the actual salary range from the negotiation strategy
     (no placeholders). Minimum 800 words.
   agent: the_coach___interview_mentor_and_strategy_architect
   context:
   - resume_gap_analysis
-  - ats_optimization_analysis
   - generate_interview_questions
   - generate_pushback_questions
   - salary_negotiation_strategy
@@ -193,4 +186,3 @@ generate_outreach_assets:
   agent: the_outreach_strategist___networking_specialist
   context:
   - resume_gap_analysis
-  - ats_optimization_analysis

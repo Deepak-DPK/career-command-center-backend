@@ -6,13 +6,13 @@ from crewai.knowledge.source.text_file_knowledge_source import TextFileKnowledge
 
 def get_llm():
     """
-    Returns the Groq Llama 3.3 70B LLM. Raises an error if GROQ_API_KEY is not defined.
+    Returns the Groq Llama 3.1 8B LLM (configured for Free Tier limits). Raises an error if GROQ_API_KEY is not defined.
     """
     groq_api_key = os.getenv("GROQ_API_KEY")
     if not groq_api_key:
         raise ValueError("CRITICAL: GROQ_API_KEY environment variable is not configured in the environment.")
     return LLM(
-        model=os.getenv("MODEL_NAME", "groq/llama-3.3-70b-versatile"),
+        model=os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant"),
         api_key=groq_api_key,
         temperature=0.3
     )
