@@ -1,5 +1,12 @@
 import os
 import json
+
+# Hotfix: disable CrewAI's automatic cache_breakpoint injection which causes Groq requests to fail
+try:
+    import crewai.llms.cache as _crewai_cache
+    _crewai_cache.mark_cache_breakpoint = lambda msg: msg
+except Exception:
+    pass
 import io
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware

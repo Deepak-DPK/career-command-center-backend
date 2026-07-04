@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 import sys
+
+# Hotfix: disable CrewAI's automatic cache_breakpoint injection which causes Groq requests to fail
+try:
+    import crewai.llms.cache as _crewai_cache
+    _crewai_cache.mark_cache_breakpoint = lambda msg: msg
+except Exception:
+    pass
+
 from career_command_center.crew import CareerCommandCenterCrew
 
 # This main file is intended to be a way for your to run your
