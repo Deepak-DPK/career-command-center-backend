@@ -27,16 +27,23 @@ async def generate_prep_kit(
     resume_text = extract_pdf_text(file_bytes)
 
     response = requests.post(
-        CREWAI_ENDPOINT,
-        headers={
-            "Authorization": f"Bearer {CREWAI_API_KEY}"
+    CREWAI_ENDPOINT,
+    headers={
+        "Authorization": f"Bearer {CREWAI_API_KEY}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "inputs": {
+            "resume_text": resume_text,
+            "job_description": job_description
         },
-        json={
-            "inputs": {
-                "resume_text": resume_text,
-                "job_description": job_description
-            }
-        }
-    )
+        "taskWebhookUrl": ""
+    }
+)
+
+return {
+    "status_code": response.status_code,
+    "response_text": response.text
+}
 
     return response.json()
