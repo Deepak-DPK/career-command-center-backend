@@ -1,0 +1,196 @@
+---
+resume_gap_analysis:
+  description: |-
+    Analyze the following resume text and job description to produce a structured skill gap report.
+
+    **Resume Text:**
+    {resume_text}
+
+    **Job Description:**
+    {job_description}
+
+    Instructions:
+    - Extract every technical skill, tool, framework, and technology mentioned in the resume.
+    - Estimate years of experience for each major domain based on role dates.
+    - Compare the resume against the job description line by line.
+    - Identify skills, certifications, or keywords present in the job description but absent from the resume.
+    - Flag experience gaps (e.g., job requires 5 years, candidate shows 2).
+    - Note any weak or vague project descriptions that could raise red flags.
+
+    Return a structured JSON object with keys: skills_found (array), missing_skills (array), experience_gaps (array).
+  expected_output: |-
+    A valid JSON object with the following structure:
+    {
+      "skills_found": ["list of skills and tools found in the resume"],
+      "missing_skills": ["list of skills/keywords in the job description but absent from the resume"],
+      "experience_gaps": ["list of experience shortfalls or weak areas identified"]
+    }
+  agent: the_sleuth___resume_analyzer_and_skill_gap_detector
+ats_optimization_analysis:
+  description: |-
+    Using the resume gap analysis already completed, simulate an ATS scan of the candidate's resume against the job description.
+
+    **Resume Text:**
+    {resume_text}
+
+    **Job Description:**
+    {job_description}
+
+    Instructions:
+    - Calculate an ATS match score from 0–100 based on keyword overlap, skills alignment, and relevance of experience to the job description.
+    - List every important keyword, phrase, or technology from the job description that is absent or underrepresented in the resume.
+    - Generate at least 5 specific, improved resume bullet point rewrites that would increase the ATS score. Each rewrite must reference a real project or experience from the resume — do NOT invent new experience.
+    - Flag any resume formatting or structural issues that commonly trip up ATS parsers (e.g., tables, missing section headers, non-standard fonts).
+    - Explain the scoring rationale in 2–3 sentences.
+
+    Return a structured JSON object with keys: ats_score (integer 0–100), missing_keywords (array of strings), resume_improvements (array of strings with rewritten bullet points and structural tips).
+  expected_output: |-
+    A valid JSON object with the following structure:
+    {
+      "ats_score": 72,
+      "missing_keywords": ["list of missing keywords/phrases from the job description"],
+      "resume_improvements": ["Rewritten bullet: 'Architected Docker-based container escape detection pipeline using Falco for real-time syscall monitoring, reducing false positives by 30%'", "...more improved bullets and structural tips"]
+    }
+  agent: the_ats_optimizer___applicant_tracking_system_specialist
+  context:
+  - resume_gap_analysis
+generate_interview_questions:
+  description: |-
+    Using the skill gap analysis and ATS optimization analysis provided, generate 5 targeted interview questions for the candidate applying to the following role.
+
+    **Job Description:**
+    {job_description}
+
+    Instructions:
+    - Write exactly 5 questions.
+    - Distribution rule: AT LEAST 2 questions must be directly answerable using the candidate's actual listed projects, skills, or experiences — do NOT ask about things they clearly have zero exposure to.
+    - Include a mix of: 2 technical questions (test skills they DO have — Python, ML, Spring Boot, Docker, SQL), 2 behavioral questions (STAR-style prompts tied to their real project work), and 1 scenario-based question (a realistic day-one work situation).
+    - Only 1 question may probe a gap or missing skill — and it must be framed as a "how would you approach learning X" question, not a "prove you know X" question.
+    - Each question must directly reference something real from the resume or the job description.
+    - Questions should feel like they come from a real, senior hiring manager — not a generic HR template.
+    - Label each question with its type: [Technical], [Behavioral], or [Scenario].
+  expected_output: |-
+    An array of exactly 5 interview question strings, each prefixed with its type label. Example format:
+    [
+      "[Technical] In your Docker Container Escape Detection project, you used Falco for real-time syscall monitoring. How did you decide which syscall patterns to flag as malicious versus normal behavior?",
+      "[Behavioral] Walk me through the most technically complex decision you made in your VIT-EfficientNet project. What trade-offs did you consider?",
+      ...
+    ]
+  agent: the_recruiter___hiring_manager_simulator
+  context:
+  - resume_gap_analysis
+  - ats_optimization_analysis
+generate_pushback_questions:
+  description: |-
+    Using the skill gap analysis and the interview questions already generated, create 3 hard-hitting pushback questions that a skeptical interviewer would use to challenge this specific candidate.
+
+    **Job Description:**
+    {job_description}
+
+    Instructions:
+    - Each question must directly attack one of the identified weaknesses, missing skills, or experience gaps.
+    - Questions should simulate an interviewer who is not satisfied with a surface-level answer and is probing for depth.
+    - Use realistic framing such as: "Your resume mentions X, but the role requires Y — can you walk me through...?", or "I notice you haven't worked with Z — how would you handle a situation where...?"
+    - These questions should feel uncomfortable but fair.
+    - Do NOT repeat questions from the previous task.
+  expected_output: |-
+    An array of exactly 3 pushback question strings. Example format:
+    [
+      "Your resume shows only 1 year of cloud infrastructure experience, but this role requires ownership of production AWS environments. How have you handled on-call incidents at scale?",
+      ...
+    ]
+  agent: the_red_teamer___stress_interviewer
+  context:
+  - resume_gap_analysis
+  - generate_interview_questions
+salary_negotiation_strategy:
+  description: |-
+    Using the full candidate profile — skill gaps, ATS score, interview questions, and pushback questions — build a comprehensive salary negotiation preparation kit for this candidate.
+
+    **Job Description:**
+    {job_description}
+
+    Instructions:
+    - Generate 5 realistic HR screening questions a recruiter would ask about compensation, notice period, competing offers, and relocation. Make them specific to this role and seniority level.
+    - Provide 5 tactical negotiation tips tailored to this candidate's profile (e.g., if they have gaps, advise on anchoring with strengths; if ATS score is low, advise on framing value differently).
+    - Write ready-to-use answer frameworks for the following 5 scenarios. IMPORTANT: Do NOT use placeholder values like "X", "Y", or "Z". Infer realistic, concrete salary figures based on the role title, seniority level (entry-level/fresher vs senior), and any location signals in the resume or job description. Provide specific INR ranges for Indian market or USD ranges for international roles based on context:
+      1. "What is your expected salary?" — Provide a specific salary range (e.g., "₹6–8 LPA" or "$80,000–95,000") with justification.
+      2. "What is your current salary?" — How to handle legally and strategically without disclosing if not required.
+      3. "What is your notice period?" — Provide a realistic notice period estimate and how to present flexibility.
+      4. "Do you have any competing offers?" — How to use or not use leverage.
+      5. "Are you open to relocation?" — How to keep options open.
+    - Each framework must include complete, verbatim suggested phrasing the candidate can use directly — no blanks, no placeholders.
+
+    Return a structured JSON object with keys: hr_questions (array), negotiation_tips (array), recommended_answer_frameworks (array of objects with scenario and suggested_response).
+  expected_output: |-
+    A valid JSON object where every suggested_response contains complete, specific, ready-to-use language with actual salary figures — no placeholders. Example:
+    {
+      "hr_questions": ["list of 5 realistic HR screening questions"],
+      "negotiation_tips": ["list of 5 tailored negotiation tactics for this candidate"],
+      "recommended_answer_frameworks": [
+        {
+          "scenario": "Expected Salary",
+          "suggested_response": "Based on my research into the market rate for entry-level Software Developer roles and my hands-on experience with Python, Java, Spring Boot, and ML projects, I'm targeting a range of ₹7–9 LPA. I'm open to discussing the full package including growth trajectory and learning opportunities."
+        },
+        ...
+      ]
+    }
+  agent: the_salary_negotiator___hr_compensation_strategy_specialist
+  context:
+  - resume_gap_analysis
+  - ats_optimization_analysis
+  - generate_interview_questions
+  - generate_pushback_questions
+generate_interview_coaching_report:
+  description: |-
+    Using ALL prior outputs — the skill gap analysis, ATS optimization analysis, 5 interview questions, 3 pushback questions, and salary negotiation strategy — create a comprehensive, final interview preparation report for this candidate.
+
+    **Job Description:**
+    {job_description}
+
+    The report must include the following sections in markdown format:
+
+    1. **Executive Summary** — A 3-sentence overview of the candidate's readiness for this role, referencing the ATS score.
+    2. **Strengths to Lead With** — Bullet points of the strongest skills and experiences the candidate should highlight early.
+    3. **ATS Score Summary** — Brief section referencing the ATS score, what drove it, and the top 3 resume improvements the candidate should make before applying.
+    4. **STAR Method Answer Frameworks** — For EACH of the 5 interview questions, provide a full STAR framework. CRITICAL RULE: Every single STAR answer MUST reference one of the candidate's actual named projects from their resume (e.g., "In my Docker Container Escape Detection project...", "During the VIT-EfficientNet framework development..."). Do NOT write hypothetical or generic answers. Situation and Task must be grounded in real resume content. Action must describe what they actually did. Result must reference a real outcome.
+    5. **Handling the Tough Questions** — For each of the 3 pushback questions, provide a strategy and complete suggested phrasing. The phrasing must be specific, not generic — reference actual skills and projects.
+    6. **Salary Negotiation Cheat Sheet** — Top 3 negotiation tips and the complete, specific suggested response for "What is your expected salary?" (use the actual salary range from the negotiation strategy output).
+    7. **Weakness Reframing** — How to address the top 2–3 missing skills honestly but constructively, with specific example sentences.
+    8. **Confidence and Mindset Strategies** — 3–5 practical tips for interview day performance, pacing, and composure.
+    9. **Final Action Plan** — A short prioritized list of things the candidate should study, practice, or fix on their resume before the interview.
+  expected_output: A well-structured, detailed markdown report covering all 9 sections.
+    Every STAR answer must reference a real project from the resume by name. The salary
+    cheat sheet must include the actual salary range from the negotiation strategy
+    (no placeholders). Minimum 800 words.
+  agent: the_coach___interview_mentor_and_strategy_architect
+  context:
+  - resume_gap_analysis
+  - ats_optimization_analysis
+  - generate_interview_questions
+  - generate_pushback_questions
+  - salary_negotiation_strategy
+
+generate_outreach_assets:
+  description: |-
+    Using the candidate's resume text and target job description, generate three highly personalized outreach templates:
+    1. A Cold Email to the Hiring Manager (subject line, professional greeting, body, signature). Highlight the candidate's single strongest project matching the job requirements.
+    2. A LinkedIn connection request pitch (strict limit: under 300 characters, including spaces).
+    3. A Post-Interview Thank You Note template (referencing specific technical discussions and reiterating value).
+
+    Instructions:
+    - Do NOT use placeholder brackets (e.g. [Hiring Manager], [Project Name]). Infer details or leave clean natural spacing, but write full ready-to-use sentences.
+    - Cite actual, real named projects from the candidate's resume that demonstrate competence.
+    
+    Return a structured JSON object with keys: cold_email (string), linkedin_pitch (string), thank_you_note (string).
+  expected_output: |-
+    A valid JSON object with the following structure:
+    {
+      "cold_email": "Subject: ...\n\nBody...",
+      "linkedin_pitch": "LinkedIn message under 300 characters...",
+      "thank_you_note": "Post-interview thank you email template..."
+    }
+  agent: the_outreach_strategist___networking_specialist
+  context:
+  - resume_gap_analysis
+  - ats_optimization_analysis

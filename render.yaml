@@ -3,4 +3,4 @@ services:
     name: career-command-center-api
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: PYTHONPATH=src python -m uvicorn career_command_center.api:app --host 0.0.0.0 --port $PORT

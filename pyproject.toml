@@ -1,0 +1,32 @@
+[project]
+name = "career_command_center"
+version = "0.1.0"
+description = "career_command_center using crewAI"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai[file-processing,litellm,tools]==1.15.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "python-multipart>=0.0.9",
+    "pypdf>=4.0.0",
+]
+
+[project.scripts]
+career_command_center = "career_command_center.main:run"
+run_crew = "career_command_center.main:run"
+train = "career_command_center.main:train"
+replay = "career_command_center.main:replay"
+test = "career_command_center.main:test"
+run_with_trigger = "career_command_center.main:run_with_trigger"
+run_api = "career_command_center.main:api"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "crew"
+
+[tool.uv]
+override-dependencies = ["litellm<=1.82.6"]
