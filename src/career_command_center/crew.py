@@ -22,156 +22,90 @@ class CareerCommandCenterCrew:
     """CareerCommandCenter crew"""
 
     @agent
-    def the_sleuth___resume_analyzer_and_skill_gap_detector(self) -> Agent:
+    def sleuth(self) -> Agent:
         return Agent(
-            config=self.agents_config["the_sleuth___resume_analyzer_and_skill_gap_detector"],
+            config=self.agents_config["sleuth"],
             tools=[],
             reasoning=False,
             max_reasoning_attempts=None,
             inject_date=True,
             allow_delegation=False,
-            max_iter=25,
+            max_iter=3,
             max_rpm=None,
             max_execution_time=None,
             llm=get_llm(),
         )
 
     @agent
-    def the_recruiter___hiring_manager_simulator(self) -> Agent:
+    def recruiter(self) -> Agent:
         return Agent(
-            config=self.agents_config["the_recruiter___hiring_manager_simulator"],
+            config=self.agents_config["recruiter"],
             tools=[],
             reasoning=False,
             max_reasoning_attempts=None,
             inject_date=True,
             allow_delegation=False,
-            max_iter=25,
+            max_iter=3,
             max_rpm=None,
             max_execution_time=None,
             llm=get_llm(),
         )
 
     @agent
-    def the_red_teamer___stress_interviewer(self) -> Agent:
+    def challenger(self) -> Agent:
         return Agent(
-            config=self.agents_config["the_red_teamer___stress_interviewer"],
+            config=self.agents_config["challenger"],
             tools=[],
             reasoning=False,
             max_reasoning_attempts=None,
             inject_date=True,
             allow_delegation=False,
-            max_iter=25,
+            max_iter=3,
             max_rpm=None,
             max_execution_time=None,
             llm=get_llm(),
         )
 
     @agent
-    def the_coach___interview_mentor_and_strategy_architect(self) -> Agent:
+    def coach(self) -> Agent:
         return Agent(
-            config=self.agents_config["the_coach___interview_mentor_and_strategy_architect"],
+            config=self.agents_config["coach"],
             tools=[],
             reasoning=False,
             max_reasoning_attempts=None,
             inject_date=True,
             allow_delegation=False,
-            max_iter=25,
-            max_rpm=None,
-            max_execution_time=None,
-            llm=get_llm(),
-        )
-
-    @agent
-    def the_ats_optimizer___applicant_tracking_system_specialist(self) -> Agent:
-        return Agent(
-            config=self.agents_config["the_ats_optimizer___applicant_tracking_system_specialist"],
-            tools=[],
-            reasoning=False,
-            max_reasoning_attempts=None,
-            inject_date=True,
-            allow_delegation=False,
-            max_iter=25,
-            max_rpm=None,
-            max_execution_time=None,
-            llm=get_llm(),
-        )
-
-    @agent
-    def the_salary_negotiator___hr_compensation_strategy_specialist(self) -> Agent:
-        return Agent(
-            config=self.agents_config["the_salary_negotiator___hr_compensation_strategy_specialist"],
-            tools=[],
-            reasoning=False,
-            max_reasoning_attempts=None,
-            inject_date=True,
-            allow_delegation=False,
-            max_iter=25,
-            max_rpm=None,
-            max_execution_time=None,
-            llm=get_llm(),
-        )
-
-    @agent
-    def the_outreach_strategist___networking_specialist(self) -> Agent:
-        return Agent(
-            config=self.agents_config["the_outreach_strategist___networking_specialist"],
-            tools=[],
-            reasoning=False,
-            max_reasoning_attempts=None,
-            inject_date=True,
-            allow_delegation=False,
-            max_iter=25,
+            max_iter=3,
             max_rpm=None,
             max_execution_time=None,
             llm=get_llm(),
         )
 
     @task
-    def resume_gap_analysis(self) -> Task:
+    def resume_analysis(self) -> Task:
         return Task(
-            config=self.tasks_config["resume_gap_analysis"],
+            config=self.tasks_config["resume_analysis"],
             markdown=False,
         )
 
     @task
-    def ats_optimization_analysis(self) -> Task:
+    def interview_questions(self) -> Task:
         return Task(
-            config=self.tasks_config["ats_optimization_analysis"],
+            config=self.tasks_config["interview_questions"],
             markdown=False,
         )
 
     @task
-    def generate_interview_questions(self) -> Task:
+    def challenger_questions(self) -> Task:
         return Task(
-            config=self.tasks_config["generate_interview_questions"],
+            config=self.tasks_config["challenger_questions"],
             markdown=False,
         )
 
     @task
-    def generate_pushback_questions(self) -> Task:
+    def coach_report(self) -> Task:
         return Task(
-            config=self.tasks_config["generate_pushback_questions"],
-            markdown=False,
-        )
-
-    @task
-    def salary_negotiation_strategy(self) -> Task:
-        return Task(
-            config=self.tasks_config["salary_negotiation_strategy"],
-            markdown=False,
-        )
-
-    @task
-    def generate_outreach_assets(self) -> Task:
-        return Task(
-            config=self.tasks_config["generate_outreach_assets"],
-            markdown=False,
-        )
-
-    @task
-    def generate_interview_coaching_report(self) -> Task:
-        return Task(
-            config=self.tasks_config["generate_interview_coaching_report"],
+            config=self.tasks_config["coach_report"],
             markdown=False,
         )
 
