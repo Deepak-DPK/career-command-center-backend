@@ -26,6 +26,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def extract_json_substring(text: str) -> str:
+    """
+    Robustly extracts the first JSON object or array from a string.
+    This handles cases where the LLM appends conversational text before or after the JSON.
+    """
+    if not text:
+        return ""
+    text_str = text.strip()
+    
+    # Try to find JSON object {}
+    first_brace = text_str.find('{')
+    last_brace = text_str.rfind('}')
+    
+    # Try to find JSON array []
+    first_bracket = text_str.find('[')
+    last_bracket = text_str.rfind(']')
+    
+    # Extract based on which comes first and forms a valid outer boundary
+    if first_brace != -1 and last_brace != -1:
+        if first_bracket != -1 and first_bracket < first_brace and last_bracket > last_brace:
+            return text_str[first_bracket:last_bracket+1]
+        return text_str[first_brace:last_brace+1]
+    elif first_bracket != -1 and last_bracket != -1:
+        return text_str[first_bracket:last_bracket+1]
+    
+    return text_str
+
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     """
     Extracts plain text from raw PDF bytes.
@@ -132,26 +159,29 @@ async def generate_prep_kit(
         gap_data = {}
         try:
             raw_gaps = result.tasks_output[0].raw
-            # Clean possible markdown wrapping if any
-            if raw_gaps.startswith("```json"):
-                raw_gaps = raw_gaps.replace("```json", "").replace("```", "").strip()
-            gap_data = json.loads(raw_gaps)
+            cleaned_gaps = extract_json_substring(raw_gaps)
+            if cleaned_gaps.startswith("```json"):
+                cleaned_gaps = cleaned_gaps.replace("```json", "").replace("```", "").strip()
+            gap_data = json.loads(cleaned_gaps)
             # Extracted skill gaps
             skill_gaps = gap_data.get("skill_gaps", [])
         except Exception as e:
             print("Failed to parse resume_analysis JSON output:", e)
-            skill_gaps = [result.tasks_output[0].raw]
+            # If JSON parsing fails, try to clean the lines from raw text
+            lines = [line.strip().lstrip("-*12345. ") for line in result.tasks_output[0].raw.split("\n") if line.strip()]
+            skill_gaps = [line for line in lines if not line.startswith(("{", "}", "[", "]", '"'))]
 
         # Task 1: interview_questions
         questions = []
         try:
             raw_q = result.tasks_output[1].raw
-            if raw_q.startswith("```json"):
-                raw_q = raw_q.replace("```json", "").replace("```", "").strip()
-            if raw_q.strip().startswith("["):
-                questions = json.loads(raw_q)
+            cleaned_q = extract_json_substring(raw_q)
+            if cleaned_q.startswith("```json"):
+                cleaned_q = cleaned_q.replace("```json", "").replace("```", "").strip()
+            if cleaned_q.strip().startswith("["):
+                questions = json.loads(cleaned_q)
             else:
-                questions = [line.strip().lstrip("-*12345. ") for line in raw_q.split("\n") if line.strip()]
+                questions = [line.strip().lstrip("-*12345. ") for line in cleaned_q.split("\n") if line.strip()]
         except Exception as e:
             print("Failed to parse generate_interview_questions:", e)
             questions = [line.strip().lstrip("-*12345. ") for line in result.tasks_output[1].raw.split("\n") if line.strip()]
@@ -161,9 +191,10 @@ async def generate_prep_kit(
         salary_questions = []
         try:
             raw_challenger = result.tasks_output[2].raw
-            if raw_challenger.startswith("```json"):
-                raw_challenger = raw_challenger.replace("```json", "").replace("```", "").strip()
-            challenger_data = json.loads(raw_challenger)
+            cleaned_challenger = extract_json_substring(raw_challenger)
+            if cleaned_challenger.startswith("```json"):
+                cleaned_challenger = cleaned_challenger.replace("```json", "").replace("```", "").strip()
+            challenger_data = json.loads(cleaned_challenger)
             pushback_questions = challenger_data.get("pushback_questions", [])
             salary_questions = challenger_data.get("salary_questions", [])
         except Exception as e:
