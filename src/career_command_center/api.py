@@ -27,6 +27,7 @@ class ChatRequest(BaseModel):
     resume_text: str = ""
     job_description: str = ""
     resume_id: str = ""
+    user_id: str = ""
     persona: str = "mentor"
 
 app = FastAPI(title="Career Command Center API", version="2.0.0")
@@ -568,7 +569,8 @@ async def chat_endpoint(req: ChatRequest):
     """
     try:
         # Check if the user is in sandbox mode (reject chat request for guest users)
-        if not req.resume_id or req.resume_id.startswith("mock") or req.resume_id == "sandbox_commander_99":
+        is_sandbox = not req.user_id or req.user_id.startswith("sandbox") or req.user_id.startswith("mock")
+        if is_sandbox:
             raise HTTPException(status_code=403, detail="AI Mentor Chat is a premium feature. Please create an account to start an interactive strategy session.")
 
         # 1. Query Router check (Fast path bypass)
