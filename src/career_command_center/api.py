@@ -327,9 +327,17 @@ async def chat_endpoint(req: ChatRequest):
     Uses the configured Groq model via litellm.
     """
     try:
-        groq_api_key = os.getenv("GROQ_API_KEY")
-        if not groq_api_key:
-            raise HTTPException(status_code=500, detail="GROQ_API_KEY is not configured in the environment.")
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        if gemini_api_key:
+            model_name = os.getenv("CHAT_MODEL_NAME", "google/gemini-2.5-flash")
+            api_key = gemini_api_key
+        else:
+            # Fallback to Groq if Gemini API Key is not set
+            groq_api_key = os.getenv("GROQ_API_KEY")
+            if not groq_api_key:
+                raise HTTPException(status_code=500, detail="Neither GEMINI_API_KEY nor GROQ_API_KEY is configured in the environment.")
+            model_name = os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
+            api_key = groq_api_key
 
         # Build prompt with RAG context
         system_prompt = f"""You are an elite, senior Career Coach and AI Mentor inside the Career Command Center.
@@ -364,11 +372,10 @@ Instructions:
 
         from litellm import completion
         
-        model_name = os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
         response = completion(
             model=model_name,
             messages=messages,
-            api_key=groq_api_key,
+            api_key=api_key,
             temperature=0.7
         )
         
