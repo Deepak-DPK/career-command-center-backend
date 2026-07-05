@@ -1,127 +1,46 @@
 # Career Command Center (CCC)
 
-Welcome to the **Career Command Center (CCC)** — a modern AI-powered interview preparation suite designed to align your resume with target job descriptions, calculate ATS match metrics, simulate interview pushback scenarios, compile tailored salary negotiation templates, and host an interactive, RAG-enabled AI Career Mentor.
+The **Career Command Center (CCC)** is an advanced AI-powered career optimization and interview preparation intelligence suite. Its goal is to empower job seekers by providing real-time, personalized analysis of their resumes against target job descriptions, simulating high-pressure interviews, scripting salary negotiation frameworks, and offering an interactive AI Career Mentor.
 
 ---
 
-## 🚀 Project Overview
+## 🌟 Core Purpose & Mission
 
-The Career Command Center consists of a dual-repo setup:
-1. **Frontend**: A React + TypeScript + TailwindCSS single page dashboard hosting command controls, resume uploads, and preparation kit display panels.
-2. **Backend**: A FastAPI server driving a CrewAI multi-agent sequential workflow, handling Supabase RAG storage/retrieval, and serving an interactive conversational mentor.
+Modern technical hiring is complex, requiring candidates to pass automated ATS screening, align with precise job criteria, answer tough behavioral questions, navigate salary expectations, and demonstrate subject-matter expertise. 
 
----
-
-## 📂 Project Repository Structures
-
-### 1. Backend: `career-command-center-backend`
-```
-career-command-center-backend/
-├── src/career_command_center/
-│   ├── config/
-│   │   ├── agents.yaml       # CrewAI Agent definitions (Sleuth, Recruiter, Challenger, Coach)
-│   │   └── tasks.yaml        # CrewAI Task definitions (Analysis, Core/Pushback questions, Coach Report)
-│   ├── api.py                # FastAPI routes, DB transactions, hybrid search & Groq/Gemini LLM fallbacks
-│   ├── crew.py               # CrewAI class orchestrating the multi-agent execution pipeline
-│   └── main.py               # Entrypoint script for Uvicorn or CLI runs
-├── .env.example              # Template for keys (Gemini, Groq, Supabase, Firebase)
-├── pyproject.toml            # Poetry/UV package manager configuration
-├── requirements.txt          # Python dependencies
-└── render.yaml               # Render Cloud service blueprints
-```
-
-### 2. Frontend: `career-command-center`
-```
-career-command-center/
-├── src/
-│   ├── components/           # Reusable UI cards, nav bars, Accordions, & Chat panels
-│   ├── services/
-│   │   └── api.ts            # Axios configuration interfacing the backend endpoints
-│   ├── types/
-│   │   └── index.ts          # Core TypeScript schema declarations
-│   ├── App.tsx               # Main application entry point orchestrating state transitions
-│   ├── index.css             # Main stylesheet injecting custom SaaS glassmorphism & glows
-│   └── supabaseClient.ts     # Supabase client routing mock data locally in Sandbox guest sessions
-├── .env.example              # Template for client API configurations
-├── package.json              # NPM dependencies and commands
-└── tsconfig.json             # TypeScript compiler settings
-```
+The Career Command Center acts as a strategic briefing room that translates a candidate's resume and target job descriptions into a complete prep dossier. It helps candidates identify their weaknesses, optimize their profile, prepare for stress scenarios, and strategize their compensation.
 
 ---
 
-## 🛠️ Installation & Setup
+## 🛠️ Key Features
 
-### Prerequisites
-- **Python**: `>=3.10` and `<3.14`
-- **Node.js**: `>=18.x`
-- **Package Managers**: [uv](https://docs.astral.sh/uv/) (highly recommended for Python) and `npm`
+The dashboard provides a suite of interactive, specialized resources divided into core panels:
 
----
-
-### Step 1: Backend Setup (`career-command-center-backend`)
-
-1. Clone or navigate to the backend repository:
-   ```bash
-   cd career-command-center-backend
-   ```
-2. Create and configure your environment variables:
-   ```bash
-   cp .env.example .env
-   ```
-   Provide the following parameters:
-   - `GEMINI_API_KEY`: Google AI studio credential (main pipeline).
-   - `GROQ_API_KEY`: Groq Cloud credential (automatic fallback routing).
-   - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`: Admin credentials for storage and vector RAG.
-   - `FIREBASE_PROJECT_ID`: Authentication validator.
-
-3. Install dependencies and sync via `uv`:
-   ```bash
-   uv sync
-   ```
-   *(Alternative without uv)*:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Start the FastAPI development server:
-   ```bash
-   uv run python src/career_command_center/main.py api
-   ```
-   The backend will launch on `http://localhost:8000`.
+1. **Skill Gaps Analysis**: Scans the candidate's resume against the job description to pinpoint technical, domain, and soft skill discrepancies.
+2. **ATS Match & Optimization**: Evaluates the resume using automated screening criteria, calculates an ATS match score, identifies missing keywords, and lists improvement suggestions.
+3. **Core Interview Simulator**: Generates role-specific questions divided into technical skills, behavioral performance (STAR method), and situational day-one situational situations.
+4. **Tough Scenarios (Stress Questions)**: Anticipates difficult pushback questions targeting gaps in work history, lack of specific framework experience, or resume weak points.
+5. **Salary Negotiation Talk Track**: Formulates market-aligned target ranges, lists negotiation tips, and builds scripts to handle compensation trap questions.
+6. **Professional Outreach Templates**: Scripts cold emails, LinkedIn connection messages, and post-interview thank you notes tailored to the target role.
+7. **Executive Coach Strategy**: Synthesizes the overall assessment into an interview battle plan, detailed roadmaps, and confidence-building advice.
+8. **Interactive AI Career Mentor**: A real-time conversational mentor that references the uploaded resume, target job details, and preparation files to answer strategy queries.
 
 ---
 
-### Step 2: Frontend Setup (`career-command-center`)
+## 💻 Tech Stack & Integrations
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd ../career-command-center
-   ```
-2. Set up client environment configurations:
-   ```bash
-   cp .env.example .env
-   ```
-   Key parameters:
-   - `VITE_API_URL`: Points to backend, e.g., `http://localhost:8000` (local) or `https://career-command-center-backend.onrender.com` (prod).
-   - `VITE_FIREBASE_API_KEY` (and other Firebase properties): Required for real Google Sign-In. If omitted, the frontend automatically falls back to guest Sandbox mode.
-   - `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`: Client connection to database.
+The system is built on a modern, decoupled stack:
 
-3. Install NPM dependencies:
-   ```bash
-   npm install
-   ```
+### Frontend
+- **React & TypeScript**: Powers the responsive single-page dashboard.
+- **TailwindCSS**: Delivers a premium dark-themed SaaS aesthetic with custom glassmorphism layers, glow indicators, and animations.
+- **Framer Motion**: Handles transitions, tab switching, and fade-in states.
 
-4. Start the React/Vite development server:
-   ```bash
-   npm run dev
-   ```
-   Access the dashboard in your browser at `http://localhost:5173`.
+### Backend
+- **FastAPI**: Serves high-speed API routes, handles file uploads, and directs chatbot requests.
+- **CrewAI**: Manages a collaborative multi-agent pipeline where AI agents exchange context to execute sequential tasks.
+- **LiteLLM**: Handles model routing, enabling support for Google Gemini models and automatic fallback to Groq Llama models during API interruptions.
 
----
-
-## 🔍 Sandbox vs Login Mode
-
-- **Sandbox Mode (Guest)**:
-  Runs if client Firebase configurations are not supplied or if you click "Launch Sandbox Mode". Session histories and resume assets are cached in local browser storage (`sessionStorage`) instead of hitting Supabase tables, skipping remote database errors.
-- **Login Mode (Google Authenticated)**:
-  Signs in via Firebase Auth. The backend parses real user UIDs and triggers the Supabase RAG storage pipeline, splitting, embedding, and saving candidate resumes to run intelligent matching and contextual chats.
+### Infrastructure & Data Layer
+- **Supabase**: Handles database storage and vector search. When users log in, resumes are chunked and mapped to vector embeddings for similarity-based chat retrieval.
+- **Firebase Auth**: Manages secure user authentication. The system supports a Sandbox mode that runs locally using session cache when Firebase is not active.

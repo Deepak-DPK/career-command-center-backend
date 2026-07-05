@@ -1,122 +1,70 @@
-# System Architecture & Multi-Agent Design Specification
+# Career Command Center — System Flow & Architecture Specification
 
-This document details the system design, data flow, database schemas, and the multi-agent pipeline powering the **Career Command Center (CCC)**.
+This document provides a conceptual walkthrough of the system flow, the multi-agent orchestration, and the database design that powers the **Career Command Center (CCC)**.
 
 ---
 
-## 🏗️ High-Level System Architecture
+## 📐 Conceptual System Architecture
 
-The CCC uses a decoupled client-server architecture with a RAG-enabled database layer and Firebase Auth.
+The application is structured into three integrated layers:
+
+1. **User Dashboard (Client Layer)**: Provides an interface for uploading resumes, entering target job descriptions, reviewing structured tabs (match scores, questions, outreach letters), and chatting with the AI Mentor.
+2. **Intelligence Engine (Application Layer)**: A FastAPI server that hosts the business logic, parses text, and runs the CrewAI multi-agent sequence.
+3. **Knowledge Storage (Database & Auth Layer)**: Manages secure user authentication via Firebase and stores document embeddings in a Supabase vector database to power the semantic chatbot.
+
+---
+
+## 🤖 Multi-Agent Pipeline & Collaboration Flow
+
+The core analysis is performed by a team of **four specialized AI agents** configured using the CrewAI framework. Instead of working in isolation, these agents execute tasks sequentially, passing their intermediate findings to the next agent in line to refine and expand the final preparation kit.
+
+### The Agent Team
+- **Resume Intelligence Specialist (Sleuth)**: This agent performs the initial screening. It contrasts the raw text of the candidate's resume with the requirements of the job description to find missing key qualifications, calculate a match score, and highlight technical gaps.
+- **Hiring Manager Simulator (Recruiter)**: Using the initial analysis from the Sleuth, this agent steps into the shoes of an interviewer. It formulates a realistic interview plan consisting of core technical questions, behavioral STAR prompts, and situational day-one challenges.
+- **Stress Interview Specialist (Challenger)**: This agent focuses on stress testing. It generates tough pushback questions targeting gaps in the resume (such as employment gaps, tool pivots, or lack of listed framework expertise) and scripts salary screening scenarios.
+- **Career Strategy Coach (Coach)**: The final compiler of the team. It synthesizes all generated questions, gaps, and pushback points into a detailed, markdown-formatted study roadmap, candidate STAR framework answers, and reframing guides.
+
+---
+
+## 🔄 End-to-End Data Flow
+
+The system flows through a series of steps to compile and deliver the prep kit:
 
 ```mermaid
 graph TD
-    A[React TypeScript Frontend] -->|1. Upload PDF & Job Description| B[FastAPI Backend Server]
-    A -->|Auth & Session Token| C[Firebase Auth]
-    B -->|2. Chunk & Embed Resume| D[(Supabase Vector DB)]
-    B -->|3. Trigger Sequential Workflow| E[CrewAI Agent orchestrator]
-    
-    subgraph CrewAI Multi-Agent Pipeline
-        E --> F[Sleuth Agent: Resume Analysis]
-        F --> G[Recruiter Agent: Question Generator]
-        G --> H[Challenger Agent: Pushback Questions]
-        H --> I[Coach Agent: Career Battle Plan]
-    end
-    
-    I -->|4. Return Unified JSON| B
-    B -->|5. Deliver Kit Response| A
-    A -->|6. Ask Strategic Question| J[FastAPI Chat Endpoint]
-    J -->|7. Hybrid Search Query| D
-    D -->|8. Relevant Context| J
-    J -->|9. Groq/Gemini Llama RAG Answer| A
+    A[Candidate uploads PDF and Job Description] --> B[FastAPI receives files and extracts raw text]
+    B --> C[CrewAI sequential pipeline starts]
+    C --> D[Sleuth analyzes resume gaps]
+    D --> E[Recruiter builds core questions]
+    E --> F[Challenger designs pushback & salary questions]
+    F --> G[Coach compiles the final Strategy Report]
+    G --> H[FastAPI saves results to Supabase and returns JSON to Frontend]
+    H --> I[Dashboard displays the tabs and unlocks the AI Mentor Chat]
 ```
 
 ---
 
-## 🤖 CrewAI Agents & Task Pipelines
+## 🗄️ Database Strategy & Retrieval-Augmented Generation (RAG)
 
-The core matching engine is built using **CrewAI**'s sequential task orchestrator. The pipeline consists of 4 specialized AI agents working in a structured sequence:
+To enable the interactive AI Mentor Chat, the system uses a vector database indexing process:
 
-| Agent Key | Role Name | Agent Objective | Backstory |
-| :--- | :--- | :--- | :--- |
-| **Sleuth** | Resume Intelligence Specialist | Compare candidate resume and job description to identify strengths, missing keywords, and ATS match score. | Expert recruiter specializing in technical hiring and automated screening tools. |
-| **Recruiter** | Hiring Manager Simulator | Generate exactly 5 realistic, role-specific questions (2 technical, 2 behavioral, 1 situational situation). | Senior engineering director experienced in candidate interviews. |
-| **Challenger** | Stress Interview Specialist | Generate exactly 3 tough pushback questions targeting candidates' weak areas, and exactly 3 salary screening questions. | Tough but fair interviewer skilled in identifying gaps in experience. |
-| **Coach** | Career Strategy Coach | Compile all outputs into a structured, markdown-formatted study roadmap and action battle plan. | Elite career coach for high-performing candidates. |
+### 1. Document Indexing (Preprocessing)
+When a resume is processed, its text is divided into small, overlapping semantic chunks. Each chunk is passed to an embedding service to generate a high-dimensional vector representing the meaning of the text. These chunks and vectors are stored in a dedicated database table connected to the user's account.
 
-### Tasks Execution Order & Context Routing
+### 2. Semantic Search (Retrieval)
+When a user asks a question in the chat (e.g., *"How should I explain my lack of Java experience?"*):
+- The chat query is converted into a vector representation.
+- A hybrid search function compares this query vector against the candidate's stored resume chunks using cosine similarity and keyword matching.
+- The top-ranking chunks are retrieved as relevant context.
 
-```mermaid
-sequenceDiagram
-    participant Sleuth as Sleuth Agent
-    participant Recruiter as Recruiter Agent
-    participant Challenger as Challenger Agent
-    participant Coach as Coach Agent
-
-    note over Sleuth: Task 1: resume_analysis<br/>Compares raw resume & job desc.<br/>Outputs: skill_gaps, missing_keywords, ats_score
-    Sleuth->>Recruiter: Passes Analysis Output (Context)
-    
-    note over Recruiter: Task 2: interview_questions<br/>Generates 5 core questions<br/>Uses resume analysis details
-    Recruiter->>Challenger: Passes Core Questions & Analysis
-    
-    note over Challenger: Task 3: challenger_questions<br/>Generates 3 pushback questions<br/>& 3 salary screening questions
-    Challenger->>Coach: Passes all intermediate outputs
-    
-    note over Coach: Task 4: coach_report<br/>Compiles study roadmaps, STAR answers,<br/>and negotiation talk scripts
-```
+### 3. Contextual Response Generation
+The retrieved chunks, the conversation history, and the user's query are combined into a system prompt. This prompt is sent to the LLM, giving the mentor access to the candidate's background details to answer the query accurately.
 
 ---
 
-## 🗄️ Database Schema & RAG Retrieval Flow
+## 🛡️ Resilience & High Availability (LLM Fallbacks)
 
-In **Login Mode**, the application performs a Hybrid Retrieval-Augmented Generation (RAG) indexing workflow to enable real-time chat context.
-
-### Database Tables (Supabase PostgreSQL + pgvector)
-
-#### 1. `resumes` Table
-Stores uploaded resume documents.
-```sql
-CREATE TABLE resumes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id TEXT NOT NULL,
-    filename TEXT NOT NULL,
-    raw_text TEXT NOT NULL,
-    summary TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-```
-
-#### 2. `resume_embeddings` Table
-Stores individual chunks of resumes along with their vector embeddings for similarity lookup.
-```sql
-CREATE TABLE resume_embeddings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    resume_id UUID REFERENCES resumes(id) ON DELETE CASCADE,
-    chunk_text TEXT NOT NULL,
-    embedding VECTOR(768), -- Leverages Google text-embedding-004
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-```
-
-#### 3. `prep_kits` Table
-Caches the compiled multi-agent reports for high-speed retrieval on page refresh.
-```sql
-CREATE TABLE prep_kits (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id TEXT NOT NULL,
-    resume_id UUID REFERENCES resumes(id) ON DELETE CASCADE,
-    filename TEXT NOT NULL,
-    job_description TEXT NOT NULL,
-    prep_kit_data JSONB NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-```
-
----
-
-## 💬 RAG Chat Retrieval Protocol
-
-When a candidate inputs a query in the **AI Mentor Chat**:
-1. The backend routes the query to generate a 768-dimensional search vector using `gemini/text-embedding-004`.
-2. A PostgreSQL hybrid function runs **Cosine Similarity + Full-Text Search (FTS)** against the candidate's active `resume_id` chunks.
-3. The closest 4 matching chunks are loaded into the chat context.
-4. The conversational prompt (including session history and RAG chunks) is sent to Gemini (with automatic fallback to Groq Llama models if API errors occur) to deliver a highly context-aware answer.
+To ensure the application remains operational during third-party API outrages or regional model deprecations:
+- **Primary Endpoint**: Chat and RAG queries are routed through Google's Gemini models.
+- **Failover Route**: If the Gemini API returns connection errors, model-not-found warnings, or rate limits, the FastAPI backend catches the exception and redirects the query to Groq's Llama models.
+- This transition is completed in milliseconds, ensuring a seamless user experience.
