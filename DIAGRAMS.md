@@ -125,30 +125,52 @@ flowchart TD
 
 ## 4. User Flow Architecture Diagram
 
-This diagram tracks the step-by-step journey of a job candidate, showing how they navigate the application states from initial landing through dashboard analysis.
+This diagram tracks the step-by-step journey of a job candidate, showing how they navigate the application states, and illustrating the database integration and RAG features unlocked by Google Login.
 
 ```mermaid
 graph TD
-    A["Candidate visits dashboard site"] --> B{"Is Firebase credentials loaded?"}
+    A["Candidate visits dashboard site"] --> B{"Is Firebase configured?"}
     
-    %% Auth path selection
-    B -->|No| C["Enters Sandbox mode as Guest"]
-    B -->|Yes| D["Authenticates via Google Login"]
+    %% Authentication Layer
+    B -->|No| C["Enters Sandbox Mode (Guest)"]
+    B -->|Yes| D["Clicks Google Sign-In button"]
+    D --> E{"Authentication Status"}
+    E -->|Success| F["Google Login Mode (Active)"]
+    E -->|Failed/Skip| C
     
-    %% File input step
-    C --> E["Access Command Dashboard Panel"]
-    D --> E
-    E --> F["Uploads Resume PDF & types Target Job Description"]
-    F --> G["Clicks 'Generate Prep Kit' trigger button"]
-    G --> H["FastAPI processes CrewAI sequence"]
+    %% Access Dashboard
+    C --> G["Access Command Dashboard Panel"]
+    F --> G
     
-    %% Results viewing
-    H --> I["Display interactive command results"]
-    I --> J["Read Skill Gaps and ATS Score metrics"]
-    I --> K["Review simulated Interview and Pushback questions"]
-    I --> L["Access Salary scripts and Outreach drafts"]
+    %% Input Submission
+    G --> H["Uploads Resume PDF & types Target Job Description"]
+    H --> I["Clicks 'Generate Prep Kit' trigger button"]
+    I --> J["FastAPI processes CrewAI sequential agents"]
     
-    %% Interactive chat
-    I --> M["Initiate chat session with AI Career Mentor"]
-    M --> N["Consult mentor on specific gaps or salary traps"]
+    %% Data Persistence Flow
+    J --> K{"User Session Type"}
+    
+    %% Guest Route (Sandbox)
+    K -->|Guest/Sandbox| L["Skips DB inserts<br/>Caches history and files locally in sessionStorage"]
+    
+    %% Google Login Route (Extra Features)
+    K -->|Google Authenticated| M["Saves raw document in resumes table<br/>Generates & embeds resume text chunks<br/>Stores vectors in resume_embeddings table<br/>Caches completed prep kit in prep_kits table"]
+    
+    %% Results Presentation
+    L --> N["Display interactive command results"]
+    M --> N
+    
+    N --> O["Read Skill Gaps, ATS matches, core, pushback, & salary answers"]
+    
+    %% Chat Interactions
+    N --> P["Initiate chat session with AI Career Mentor"]
+    P --> Q{"User Session Type"}
+    
+    %% Chat RAG retrieval flow
+    Q -->|Guest/Sandbox| R["Utilizes raw text fallback in chat prompts"]
+    Q -->|Google Authenticated| S["Runs hybrid cosine similarity + full-text RAG search<br/>Pulls closest matching database chunks for context"]
+    
+    R --> T["Mentor generates tailored strategic reply"]
+    S --> T
+    T --> U["Candidate reads response and asks follow-ups"]
 ```
