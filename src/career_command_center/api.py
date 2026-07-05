@@ -671,12 +671,26 @@ Instructions:
         messages.append({"role": "user", "content": req.message})
 
         from litellm import completion
-        response = completion(
-            model=model_name,
-            messages=messages,
-            api_key=api_key,
-            temperature=0.7
-        )
+        try:
+            response = completion(
+                model=model_name,
+                messages=messages,
+                api_key=api_key,
+                temperature=0.7
+            )
+        except Exception as primary_err:
+            print(f"Primary chat model {model_name} failed: {primary_err}. Attempting Groq fallback...")
+            groq_api_key = os.getenv("GROQ_API_KEY")
+            if not groq_api_key:
+                raise primary_err
+            
+            fallback_model = os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
+            response = completion(
+                model=fallback_model,
+                messages=messages,
+                api_key=groq_api_key,
+                temperature=0.7
+            )
         
         reply = response.choices[0].message.content
         return {"reply": reply}
