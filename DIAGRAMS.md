@@ -10,28 +10,28 @@ This diagram maps the high-level boundaries between the user's browser, external
 
 ```mermaid
 graph TB
-    subgraph Client Layer
+    subgraph "Client Layer"
         A["React TypeScript SPA Dashboard"]
     end
 
-    subgraph Authentication & CDN
+    subgraph "Authentication & CDN"
         B["Firebase Auth Service (Google Login)"]
         C["Vite Static Asset Server"]
     end
 
-    subgraph Service Layer (FastAPI Backend)
+    subgraph "Service Layer (FastAPI Backend)"
         D["FastAPI Gateway"]
         E["CrewAI Execution pipeline"]
         F["LiteLLM Routing Module"]
     end
 
-    subgraph Vector DB & Storage (Supabase PostgreSQL)
+    subgraph "Vector DB & Storage (Supabase PostgreSQL)"
         G["resumes Table (Raw Document)"]
         H["resume_embeddings Table (pgvector)"]
         I["prep_kits Table (Cached Dossiers)"]
     end
 
-    subgraph Third-Party LLM Providers
+    subgraph "Third-Party LLM Providers"
         J["Google AI API (Gemini-1.5-Flash)"]
         K["Groq API (Llama-3.1-8B-Instant)"]
     end
@@ -61,18 +61,18 @@ This diagram zooms into the FastAPI backend server, illustrating the API router 
 
 ```mermaid
 graph LR
-    subgraph FastAPI Endpoints
+    subgraph "FastAPI Endpoints"
         A["POST /generate-prep-kit"]
         B["POST /chat"]
     end
 
-    subgraph Data Processing Pipeline
+    subgraph "Data Processing Pipeline"
         C["PDF text parser"]
         D["Hybrid keyword matcher"]
         E["RAG semantic retrieval"]
     end
 
-    subgraph CrewAI Agent Sequence
+    subgraph "CrewAI Agent Sequence"
         F["Sleuth Agent<br/>(Resume Analysis)"]
         G["Recruiter Agent<br/>(Core Questions)"]
         H["Challenger Agent<br/>(Pushback & Salary)"]
@@ -102,14 +102,14 @@ This diagram details the dual RAG pipeline: **Ingestion Flow** (how the resume i
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion Flow (PDF Upload)
+    subgraph "Ingestion Flow (PDF Upload)"
         A["Candidate Resume Uploaded"] --> B["FastAPI extracts raw string text"]
         B --> C["Text divided into overlapping chunks"]
         C --> D["Gemini embedding model generates 768-dim vectors"]
         D --> E["Store chunks and vector keys in Supabase postgres table"]
     end
 
-    subgraph Retrieval Flow (User Chat Query)
+    subgraph "Retrieval Flow (User Chat Query)"
         F["Candidate inputs chat question"] --> G["Generate query vector embedding"]
         G --> H["PostgreSQL Cosine Similarity search matching user resume_id"]
         H --> I["Retrieve top 4 closest matching resume chunks"]
