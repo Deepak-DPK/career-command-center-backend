@@ -13,7 +13,18 @@ except Exception:
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pypdf import PdfReader
+from pydantic import BaseModel
 from career_command_center.crew import CareerCommandCenterCrew
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    message: str
+    history: list[ChatMessage] = []
+    resume_text: str = ""
+    job_description: str = ""
 
 app = FastAPI(title="Career Command Center API", version="2.0.0")
 
@@ -300,12 +311,72 @@ async def generate_prep_kit(
             "pushback_questions": pushback_questions,
             "salary_negotiation": salary_negotiation,
             "coach_report": coach_report,
-            "outreach_assets": outreach_assets
+            "outreach_assets": outreach_assets,
+            "resume_text": resume_text_truncated
         }
 
     except Exception as e:
         print("Error during CrewAI execution:", e)
         raise HTTPException(status_code=500, detail=f"CrewAI execution failed: {str(e)}")
+
+@app.post("/chat")
+async def chat_endpoint(req: ChatRequest):
+    """
+    Simulates a session-based Career Mentor / Coach chatbot.
+    Injects the resume text and target job description to act as RAG context.
+    Uses the configured Groq model via litellm.
+    """
+    try:
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        if not groq_api_key:
+            raise HTTPException(status_code=500, detail="GROQ_API_KEY is not configured in the environment.")
+
+        # Build prompt with RAG context
+        system_prompt = f"""You are an elite, senior Career Coach and AI Mentor inside the Career Command Center.
+Your goal is to help the candidate prepare for their target job, analyze their skills, and strategize for interviews.
+
+You have access to the following context (RAG):
+TARGET JOB DESCRIPTION:
+\"\"\"
+{req.job_description}
+\"\"\"
+
+CANDIDATE'S RESUME:
+\"\"\"
+{req.resume_text}
+\"\"\"
+
+Instructions:
+- Be highly professional, strategic, encouraging, and clear.
+- Directly reference the candidate's resume achievements, projects, or gaps when answering questions.
+- Address their queries systematically (e.g. use bullet points if helpful, but keep answers concise).
+- Do not make up facts not present in the resume or job description; maintain realistic constraints.
+- Format all your responses using clean Markdown.
+"""
+
+        # Format messages list
+        messages = [{"role": "system", "content": system_prompt}]
+        for msg in req.history:
+            messages.append({"role": msg.role, "content": msg.content})
+        
+        # Append the new user message
+        messages.append({"role": "user", "content": req.message})
+
+        from litellm import completion
+        
+        model_name = os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
+        response = completion(
+            model=model_name,
+            messages=messages,
+            api_key=groq_api_key,
+            temperature=0.7
+        )
+        
+        reply = response.choices[0].message.content
+        return {"reply": reply}
+    except Exception as e:
+        print("Chat completion failed:", e)
+        raise HTTPException(status_code=500, detail=f"Failed to generate AI response: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
