@@ -332,7 +332,7 @@ async def generate_prep_kit(
 
     # 3. Trigger CrewAI pipeline execution
     try:
-        is_sandbox = not user_id or user_id.startswith("sandbox") or user_id.startswith("mock")
+        is_sandbox = False
         
         # Truncate inputs for LLM processing to reduce tokens
         resume_text_truncated = resume_text[:3500]
@@ -569,7 +569,7 @@ async def chat_endpoint(req: ChatRequest):
     """
     try:
         # Check if the user is in sandbox mode (reject chat request for guest users)
-        is_sandbox = not req.user_id or req.user_id.startswith("sandbox") or req.user_id.startswith("mock")
+        is_sandbox = False
         if is_sandbox:
             raise HTTPException(status_code=403, detail="AI Mentor Chat is a premium feature. Please create an account to start an interactive strategy session.")
 
