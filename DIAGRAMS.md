@@ -1,123 +1,65 @@
 # Career Command Center — System Diagrams Reference
 
-This document compiles the Mermaid architecture diagrams and process flows that represent the design of the **Career Command Center (CCC)** application.
+This document compiles the simplified, clean, and crisp Mermaid architecture diagrams and process flows that represent the design of the **Career Command Center (CCC)** application.
 
 ---
 
 ## 1. System Architecture Diagram
 
-This diagram maps the high-level boundaries between the user's browser, external cloud APIs, authentication services, and the backend engine.
+This diagram maps the high-level system boundaries and integrations.
 
 ```mermaid
-graph TB
-    subgraph client_layer ["Client Layer"]
-        A["React TypeScript SPA Dashboard"]
-    end
-
-    subgraph auth_cdn ["Authentication & CDN"]
-        B["Firebase Auth Service (Google Login)"]
-        C["Vite Static Asset Server"]
-    end
-
-    subgraph service_layer ["Service Layer (FastAPI Backend)"]
-        D["FastAPI Gateway"]
-        E["CrewAI Execution pipeline"]
-        F["LiteLLM Routing Module"]
-    end
-
-    subgraph db_storage ["Vector DB & Storage (Supabase PostgreSQL)"]
-        G["resumes Table (Raw Document)"]
-        H["resume_embeddings Table (pgvector)"]
-        I["prep_kits Table (Cached Dossiers)"]
-    end
-
-    subgraph llm_providers ["Third-Party LLM Providers"]
-        J["Google AI API (Gemini-1.5-Flash)"]
-        K["Groq API (Llama-3.1-8B-Instant)"]
-    end
-
-    %% Client Interactions
-    A -->|User Session Info| B
-    A -->|1. Upload File & Form Parameters| D
-    A -->|3. Query chat message| D
-
-    %% Backend Routing
-    D -->|2. Trigger sequential agents| E
-    E -->|Call LLM endpoints| F
-    D -->|Retrieve matching chunks| H
-    D -->|Store processed kit| I
-    D -->|Store parsed resume| G
-
-    %% LLM Routing
-    F -->|Primary Route| J
-    F -->|Failover Route| K
+graph TD
+    A["React Frontend (UI Dashboard)"] <-->|API Request / Auth| B["FastAPI Backend (Gateway)"]
+    B <-->|Session Verification| C["Firebase Auth"]
+    B <-->|Storage & Vector search| D["Supabase Database"]
+    B -->|Triggers Pipeline| E["CrewAI Orchestrator"]
+    E -->|Model Routing (LiteLLM)| F["LLMs (Gemini / Groq)"]
 ```
 
 ---
 
 ## 2. Backend Architecture Diagram
 
-This diagram zooms into the FastAPI backend server, illustrating the API router layers, business components, and the sequential CrewAI task pipeline.
+This diagram zooms into the FastAPI backend server, detailing the API layers and the sequential agent workflow.
 
 ```mermaid
 graph LR
-    subgraph endpoints ["FastAPI Endpoints"]
-        A["POST /generate-prep-kit"]
-        B["POST /chat"]
-    end
-
-    subgraph pipeline ["Data Processing Pipeline"]
-        C["PDF text parser"]
-        D["Hybrid keyword matcher"]
-        E["RAG semantic retrieval"]
-    end
-
-    subgraph agent_seq ["CrewAI Agent Sequence"]
-        F["Sleuth Agent<br/>(Resume Analysis)"]
-        G["Recruiter Agent<br/>(Core Questions)"]
-        H["Challenger Agent<br/>(Pushback & Salary)"]
-        I["Coach Agent<br/>(Career Battle Plan)"]
-    end
-
-    %% Endpoint routing
-    A -->|Extract text| C
-    C -->|Truncated inputs| F
+    A["HTTP Request"] --> B["FastAPI Router"]
+    B --> C["PDF Text Extractor"]
+    C --> D["CrewAI Orchestrator"]
     
-    %% Sequential crew execution
-    F -->|Analysis outputs| G
-    G -->|Analysis + Core Questions| H
-    H -->|All intermediate context| I
+    subgraph agent_sequence ["Sequential Agent Pipeline"]
+        D --> E["Sleuth (ATS & Gaps)"]
+        E --> F["Recruiter (Core Questions)"]
+        F --> G["Challenger (Pushback)"]
+        G --> H["Coach (Strategy Battle Plan)"]
+    end
     
-    %% Response and Storage
-    I -->|JSON output kit| D
-    B -->|User message| E
-    E -->|Retrieve semantic context| B
+    H --> I["Unified JSON Response"]
+    I --> B
 ```
 
 ---
 
 ## 3. RAG Architecture Diagram
 
-This diagram details the dual RAG pipeline: **Ingestion Flow** (how the resume is split and indexed) and **Retrieval Flow** (how candidate queries are semantically matched and answered).
+This diagram details the dual RAG Ingestion (PDF index upload) and Retrieval (AI Chat query) flows.
 
 ```mermaid
-flowchart TD
-    subgraph ingestion_flow ["Ingestion Flow (PDF Upload)"]
-        A["Candidate Resume Uploaded"] --> B["FastAPI extracts raw string text"]
-        B --> C["Text divided into overlapping chunks"]
-        C --> D["Gemini embedding model generates 768-dim vectors"]
-        D --> E["Store chunks and vector keys in Supabase postgres table"]
+graph TD
+    subgraph ingestion ["1. Ingestion Flow (PDF Upload)"]
+        A["Resume PDF"] --> B["Text Chunking"]
+        B --> C["Vector Embeddings (768-dim)"]
+        C --> D["Store in Supabase pgvector"]
     end
 
-    subgraph retrieval_flow ["Retrieval Flow (User Chat Query)"]
-        F["Candidate inputs chat question"] --> G["Generate query vector embedding"]
-        G --> H["PostgreSQL Cosine Similarity search matching user resume_id"]
-        H --> I["Retrieve top 4 closest matching resume chunks"]
-        I --> J["Assemble prompt with System Rules + RAG chunks + Message History"]
-        J --> K["Gemini API generates chat response"]
-        K -->|If API fails| L["Failover to Groq API Llama model"]
-        L --> M["Deliver chat reply to client"]
-        K --> M
+    subgraph retrieval ["2. Retrieval Flow (AI Chat)"]
+        E["User Question"] --> F["Generate Query Vector"]
+        F --> G["Cosine Similarity Search"]
+        G --> H["Inject Matching Chunks to Prompt"]
+        H --> I["LLM Completion (Gemini / Groq)"]
+        I --> J["Deliver AI Chat Response"]
     end
 ```
 
@@ -125,56 +67,19 @@ flowchart TD
 
 ## 4. User Flow Architecture Diagram
 
-This diagram tracks the step-by-step journey of a job candidate, showing how they navigate the application states, and illustrating the database integration and RAG features unlocked by Google Login, while showing the locks on Sandbox guest sessions.
+This diagram tracks the candidate journey from landing page to dashboard interaction based on authentication status.
 
 ```mermaid
 graph TD
-    A["Candidate visits dashboard site"] --> B{"Is Firebase configured?"}
+    A["Candidate Landing Page"] --> B{"Has Google Auth?"}
+    B -->|Yes| C["Google Login Mode (All 8 Features Unlocked)"]
+    B -->|No| D["Sandbox Guest Mode (4 Features Unlocked / 4 Locked)"]
     
-    %% Authentication Layer
-    B -->|No| C["Enters Sandbox Mode (Guest)"]
-    B -->|Yes| D["Clicks Google Sign-In button"]
-    D --> E{"Authentication Status"}
-    E -->|Success| F["Google Login Mode (Active)"]
-    E -->|Failed/Skip| C
+    C & D --> E["Upload Resume & Enter Job Description"]
+    E --> F["FastAPI executes CrewAI sequential pipeline"]
     
-    %% Access Dashboard
-    C --> G["Access Command Dashboard Panel"]
-    F --> G
-    
-    %% Input Submission
-    G --> H["Uploads Resume PDF & types Target Job Description"]
-    H --> I["Clicks 'Generate Prep Kit' trigger button"]
-    I --> J["FastAPI processes CrewAI sequential agents"]
-    
-    %% Data Persistence Flow
-    J --> K{"User Session Type"}
-    
-    %% Guest Route (Sandbox)
-    K -->|Guest/Sandbox| L["Skips DB inserts<br/>Caches history and files locally in sessionStorage"]
-    
-    %% Google Login Route (Extra Features)
-    K -->|Google Authenticated| M["Saves raw document in resumes table<br/>Generates & embeds resume text chunks<br/>Stores vectors in resume_embeddings table<br/>Caches completed prep kit in prep_kits table"]
-    
-    %% Results Presentation
-    L --> N["Display interactive command results"]
-    M --> N
-    
-    %% Feature Authorization
-    N --> O{"User Session Type"}
-    O -->|Guest/Sandbox| P["Accesses only 4 features: Skill Gaps, ATS, Core Questions, Tough Scenarios<br/>Premium features locked: Salary Negotiation, Outreach, Coach Strategy"]
-    O -->|Google Authenticated| Q["Accesses all 8 features: Full roadmaps, Negotiation scripts, Outreach pitches, Coach Strategy"]
-    
-    %% Chat Interactions
-    P --> R["Initiate chat session with AI Career Mentor"]
-    Q --> R
-    
-    R --> S{"User Session Type"}
-    
-    %% Chat RAG retrieval flow
-    S -->|Guest/Sandbox| T["AI Mentor Chat is Locked<br/>Prompts user to sign in to access strategy session"]
-    S -->|Google Authenticated| U["AI Mentor Chat is Unlocked<br/>Runs hybrid cosine similarity + full-text RAG search<br/>Pulls closest matching database chunks for context"]
-    
-    U --> V["Mentor generates tailored strategic reply"]
-    V --> W["Candidate reads response and asks follow-ups"]
+    F --> G["Review Dashboard Gaps & Questions"]
+    G --> H{"Is Google Auth User?"}
+    H -->|Yes| I["Access Coach Strategy, Salary scripts, & RAG Chat Mentor"]
+    H -->|No| J["Blocked from Premium Features & Chat overlay"]
 ```
