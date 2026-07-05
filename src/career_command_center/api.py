@@ -122,7 +122,7 @@ async def generate_prep_kit(
         result = await CareerCommandCenterCrew().crew().kickoff_async(inputs=inputs)
         
         # Ensure we have enough tasks outputs to parse (at least 4 tasks now)
-        if not result or not result.tasks_outputs or len(result.tasks_outputs) < 4:
+        if not result or not result.tasks_output or len(result.tasks_output) < 4:
             raise ValueError("Crew completed but failed to generate all task output reports.")
 
         # 4. Parse & Aggregate Task Outputs for the Frontend
@@ -131,7 +131,7 @@ async def generate_prep_kit(
         skill_gaps = []
         gap_data = {}
         try:
-            raw_gaps = result.tasks_outputs[0].raw
+            raw_gaps = result.tasks_output[0].raw
             # Clean possible markdown wrapping if any
             if raw_gaps.startswith("```json"):
                 raw_gaps = raw_gaps.replace("```json", "").replace("```", "").strip()
@@ -140,12 +140,12 @@ async def generate_prep_kit(
             skill_gaps = gap_data.get("skill_gaps", [])
         except Exception as e:
             print("Failed to parse resume_analysis JSON output:", e)
-            skill_gaps = [result.tasks_outputs[0].raw]
+            skill_gaps = [result.tasks_output[0].raw]
 
         # Task 1: interview_questions
         questions = []
         try:
-            raw_q = result.tasks_outputs[1].raw
+            raw_q = result.tasks_output[1].raw
             if raw_q.startswith("```json"):
                 raw_q = raw_q.replace("```json", "").replace("```", "").strip()
             if raw_q.strip().startswith("["):
@@ -154,13 +154,13 @@ async def generate_prep_kit(
                 questions = [line.strip().lstrip("-*12345. ") for line in raw_q.split("\n") if line.strip()]
         except Exception as e:
             print("Failed to parse generate_interview_questions:", e)
-            questions = [line.strip().lstrip("-*12345. ") for line in result.tasks_outputs[1].raw.split("\n") if line.strip()]
+            questions = [line.strip().lstrip("-*12345. ") for line in result.tasks_output[1].raw.split("\n") if line.strip()]
 
         # Task 2: challenger_questions
         pushback_questions = []
         salary_questions = []
         try:
-            raw_challenger = result.tasks_outputs[2].raw
+            raw_challenger = result.tasks_output[2].raw
             if raw_challenger.startswith("```json"):
                 raw_challenger = raw_challenger.replace("```json", "").replace("```", "").strip()
             challenger_data = json.loads(raw_challenger)
@@ -168,12 +168,12 @@ async def generate_prep_kit(
             salary_questions = challenger_data.get("salary_questions", [])
         except Exception as e:
             print("Failed to parse challenger_questions JSON output:", e)
-            lines = [line.strip().lstrip("-*12345. ") for line in result.tasks_outputs[2].raw.split("\n") if line.strip()]
+            lines = [line.strip().lstrip("-*12345. ") for line in result.tasks_output[2].raw.split("\n") if line.strip()]
             pushback_questions = lines[:3]
             salary_questions = lines[3:6]
 
         # Task 3: coach_report
-        coach_report = result.tasks_outputs[3].raw
+        coach_report = result.tasks_output[3].raw
 
         # 5. Hybrid logic: Calculate ATS score, missing keywords & improvements via Python
         py_ats_score, py_missing_keywords, py_improvements = calculate_ats_score(resume_text, job_description)
