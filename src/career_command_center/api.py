@@ -142,7 +142,7 @@ def get_supabase_headers():
 def generate_resume_summary(resume_text: str) -> dict:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     api_key = gemini_api_key or os.getenv("GROQ_API_KEY")
-    model_name = "gemini/gemini-1.5-flash-latest" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
+    model_name = "gemini/gemini-1.5-flash" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
     
     prompt = f"""You are a professional recruiting assistant. Extract a structured JSON summary from this candidate's resume text.
 RESUME TEXT:
@@ -285,7 +285,7 @@ def query_router(message: str) -> str | None:
 def generate_history_summary(messages: list[ChatMessage]) -> str:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     api_key = gemini_api_key or os.getenv("GROQ_API_KEY")
-    model_name = "gemini/gemini-1.5-flash-latest" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
+    model_name = "gemini/gemini-1.5-flash" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
     
     conversation_text = ""
     for msg in messages:
@@ -331,6 +331,8 @@ async def generate_prep_kit(
 
     # 3. Trigger CrewAI pipeline execution
     try:
+        is_sandbox = not user_id or user_id.startswith("sandbox") or user_id.startswith("mock")
+        
         # Truncate inputs for LLM processing to reduce tokens
         resume_text_truncated = resume_text[:3500]
         job_description_truncated = job_description[:1800]
@@ -340,11 +342,18 @@ async def generate_prep_kit(
             'job_description': job_description_truncated
         }
         
-        # Kick off the sequential crew agents workflow (4 tasks)
-        result = await CareerCommandCenterCrew().crew().kickoff_async(inputs=inputs)
+        # Instantiate crew and slice tasks in Sandbox mode to save tokens
+        crew_instance = CareerCommandCenterCrew()
+        crew_object = crew_instance.crew()
+        if is_sandbox:
+            crew_object.tasks = crew_object.tasks[:-1]
+            
+        # Kick off the sequential crew agents workflow (4 tasks normally, 3 in sandbox)
+        result = await crew_object.kickoff_async(inputs=inputs)
         
-        # Ensure we have enough tasks outputs to parse (at least 4 tasks now)
-        if not result or not result.tasks_output or len(result.tasks_output) < 4:
+        min_tasks = 3 if is_sandbox else 4
+        # Ensure we have enough tasks outputs to parse
+        if not result or not result.tasks_output or len(result.tasks_output) < min_tasks:
             raise ValueError("Crew completed but failed to generate all task output reports.")
 
         # 4. Parse & Aggregate Task Outputs for the Frontend
@@ -399,7 +408,10 @@ async def generate_prep_kit(
             salary_questions = lines[3:6]
 
         # Task 3: coach_report
-        coach_report = result.tasks_output[3].raw
+        if is_sandbox:
+            coach_report = "### Premium Feature Locked\n\nUnlock your complete Executive Coach Strategy report—including critical gaps, presentation tactics, and overall assessment—by logging in with a Google account."
+        else:
+            coach_report = result.tasks_output[3].raw
 
         # 5. Hybrid logic: Calculate ATS score, missing keywords & improvements via Python
         py_ats_score, py_missing_keywords, py_improvements = calculate_ats_score(resume_text, job_description)
@@ -421,71 +433,85 @@ async def generate_prep_kit(
         }
 
         # 6. Hybrid logic: Generate salary negotiation kit using Challenger's questions and templates
-        if not salary_questions:
-            salary_questions = [
-                "What are your salary expectations for this position?",
-                "What is your current compensation package?",
-                "What is your notice period and are you open to relocation?"
-            ]
-            
-        jd_lower = job_description.lower()
-        if any(x in jd_lower for x in ["india", "inr", "lpa", "mumbai", "bangalore", "bengaluru", "pune", "delhi", "noida"]):
-            expected_range = "₹8–12 LPA"
-            if "senior" in jd_lower or "lead" in jd_lower:
-                expected_range = "₹18–25 LPA"
-            elif "junior" in jd_lower or "entry" in jd_lower or "fresher" in jd_lower:
-                expected_range = "₹4–6 LPA"
+        if is_sandbox:
+            salary_negotiation = {
+                "hr_questions": [],
+                "negotiation_tips": [],
+                "recommended_answer_frameworks": []
+            }
         else:
-            expected_range = "$90,000–$120,000"
-            if "senior" in jd_lower or "lead" in jd_lower:
-                expected_range = "$140,000–$180,000"
-            elif "junior" in jd_lower or "entry" in jd_lower or "fresher" in jd_lower:
-                expected_range = "$60,000–$80,000"
+            if not salary_questions:
+                salary_questions = [
+                    "What are your salary expectations for this position?",
+                    "What is your current compensation package?",
+                    "What is your notice period and are you open to relocation?"
+                ]
                 
-        salary_negotiation = {
-            "hr_questions": salary_questions,
-            "negotiation_tips": [
-                "Research local market compensation standards for this job title and level before negotiations.",
-                "Focus on the value and impact you bring to the team rather than your personal financial needs.",
-                "Defer the salary discussion during early interviews until you have established your value and fit.",
-                "Consider the full reward package, including benefits, equity, flexible hours, and professional development."
-            ],
-            "recommended_answer_frameworks": [
-                {
-                    "title": "Expected Salary",
-                    "framework": "Provide a research-backed range, frame it around the role value, and keep it flexible.",
-                    "example": f"Based on my research of similar roles in this area and my relevant experience, I'm targeting a range of {expected_range}. I'm open to discussing the complete package once we align on the scope."
-                },
-                {
-                    "title": "Current Salary",
-                    "framework": "Focus on the value of the new role rather than your historical earnings.",
-                    "example": "I'd prefer to focus on the value I can bring to this position and the market rate for this role, rather than my past compensation."
-                },
-                {
-                    "title": "Competing Offers",
-                    "framework": "Be honest but focus on the current opportunity and mutual alignment.",
-                    "example": "I am in active discussions with other companies, but this opportunity is my top priority because it perfectly aligns with my skill set."
-                }
-            ]
-        }
+            jd_lower = job_description.lower()
+            if any(x in jd_lower for x in ["india", "inr", "lpa", "mumbai", "bangalore", "bengaluru", "pune", "delhi", "noida"]):
+                expected_range = "₹8–12 LPA"
+                if "senior" in jd_lower or "lead" in jd_lower:
+                    expected_range = "₹18–25 LPA"
+                elif "junior" in jd_lower or "entry" in jd_lower or "fresher" in jd_lower:
+                    expected_range = "₹4–6 LPA"
+            else:
+                expected_range = "$90,000–$120,000"
+                if "senior" in jd_lower or "lead" in jd_lower:
+                    expected_range = "$140,000–$180,000"
+                elif "junior" in jd_lower or "entry" in jd_lower or "fresher" in jd_lower:
+                    expected_range = "$60,000–$80,000"
+                    
+            salary_negotiation = {
+                "hr_questions": salary_questions,
+                "negotiation_tips": [
+                    "Research local market compensation standards for this job title and level before negotiations.",
+                    "Focus on the value and impact you bring to the team rather than your personal financial needs.",
+                    "Defer the salary discussion during early interviews until you have established your value and fit.",
+                    "Consider the full reward package, including benefits, equity, flexible hours, and professional development."
+                ],
+                "recommended_answer_frameworks": [
+                    {
+                        "title": "Expected Salary",
+                        "framework": "Provide a research-backed range, frame it around the role value, and keep it flexible.",
+                        "example": f"Based on my research of similar roles in this area and my relevant experience, I'm targeting a range of {expected_range}. I'm open to discussing the complete package once we align on the scope."
+                    },
+                    {
+                        "title": "Current Salary",
+                        "framework": "Focus on the value of the new role rather than your historical earnings.",
+                        "example": "I'd prefer to focus on the value I can bring to this position and the market rate for this role, rather than my past compensation."
+                    },
+                    {
+                        "title": "Competing Offers",
+                        "framework": "Be honest but focus on the current opportunity and mutual alignment.",
+                        "example": "I am in active discussions with other companies, but this opportunity is my top priority because it perfectly aligns with my skill set."
+                    }
+                ]
+            }
 
         # 7. Hybrid logic: Generate Outreach Assets
-        # Extract title if present or default
-        title_match = re.search(r'(?:title|role|position):\s*([^\n\r]+)', job_description, re.IGNORECASE)
-        job_title = title_match.group(1).strip() if title_match else "Software Engineer"
-        job_title = job_title[:50]
-        
-        cold_email = f"Subject: Application for {job_title} - Outreach\n\nDear Hiring Team,\n\nI recently applied for the {job_title} position and wanted to reach out directly. With my background in software development and hands-on project experience, I am confident I can contribute effectively to your team's goals.\n\nI would love the opportunity to discuss how my skills align with your current engineering challenges.\n\nBest regards,\nCandidate"
-        
-        linkedin_pitch = f"Hi, I noticed your team is hiring for a {job_title}. With my experience in software engineering and technical projects, I'd love to connect and briefly discuss how my background aligns with your current team needs. Thanks!"
-        
-        thank_you_note = f"Subject: Thank you - {job_title} Interview\n\nDear Interviewer,\n\nThank you for taking the time to speak with me today about the {job_title} role. I really enjoyed our conversation and learning more about the engineering challenges your team is solving.\n\nI am very excited about the opportunity to join the team and bring my technical skills to the role.\n\nBest regards,\nCandidate"
-        
-        outreach_assets = {
-            "cold_email": cold_email,
-            "linkedin_pitch": linkedin_pitch[:300],
-            "thank_you_note": thank_you_note
-        }
+        if is_sandbox:
+            outreach_assets = {
+                "cold_email": "Locked: Please log in to generate cold email outreach assets.",
+                "linkedin_pitch": "Locked: Please log in to generate LinkedIn connection pitches.",
+                "thank_you_note": "Locked: Please log in to generate post-interview thank you templates."
+            }
+        else:
+            # Extract title if present or default
+            title_match = re.search(r'(?:title|role|position):\s*([^\n\r]+)', job_description, re.IGNORECASE)
+            job_title = title_match.group(1).strip() if title_match else "Software Engineer"
+            job_title = job_title[:50]
+            
+            cold_email = f"Subject: Application for {job_title} - Outreach\n\nDear Hiring Team,\n\nI recently applied for the {job_title} position and wanted to reach out directly. With my background in software development and hands-on project experience, I am confident I can contribute effectively to your team's goals.\n\nI would love the opportunity to discuss how my skills align with your current engineering challenges.\n\nBest regards,\nCandidate"
+            
+            linkedin_pitch = f"Hi, I noticed your team is hiring for a {job_title}. With my experience in software engineering and technical projects, I'd love to connect and briefly discuss how my background aligns with your current team needs. Thanks!"
+            
+            thank_you_note = f"Subject: Thank you - {job_title} Interview\n\nDear Interviewer,\n\nThank you for taking the time to speak with me today about the {job_title} role. I really enjoyed our conversation and learning more about the engineering challenges your team is solving.\n\nI am very excited about the opportunity to join the team and bring my technical skills to the role.\n\nBest regards,\nCandidate"
+            
+            outreach_assets = {
+                "cold_email": cold_email,
+                "linkedin_pitch": linkedin_pitch[:300],
+                "thank_you_note": thank_you_note
+            }
 
         # RAG Embedding & Storage Pipeline (if user_id is supplied)
         resume_id = None
@@ -541,6 +567,10 @@ async def chat_endpoint(req: ChatRequest):
     Includes a query router to fast-bypass the LLM for simple greetings or thank-yous.
     """
     try:
+        # Check if the user is in sandbox mode (reject chat request for guest users)
+        if not req.resume_id or req.resume_id.startswith("mock") or req.resume_id == "sandbox_commander_99":
+            raise HTTPException(status_code=403, detail="AI Mentor Chat is a premium feature. Please create an account to start an interactive strategy session.")
+
         # 1. Query Router check (Fast path bypass)
         fast_response = query_router(req.message)
         if fast_response:
@@ -549,7 +579,7 @@ async def chat_endpoint(req: ChatRequest):
         # 2. Get API credentials & resolve models
         gemini_api_key = os.getenv("GEMINI_API_KEY")
         if gemini_api_key:
-            model_name = os.getenv("CHAT_MODEL_NAME", "gemini/gemini-1.5-flash-latest")
+            model_name = os.getenv("CHAT_MODEL_NAME", "gemini/gemini-1.5-flash")
             api_key = gemini_api_key
         else:
             # Fallback to Groq if Gemini API Key is not set
