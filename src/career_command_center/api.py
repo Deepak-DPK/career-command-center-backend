@@ -86,7 +86,19 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
 def calculate_ats_score(resume_text: str, job_description: str):
     """
     Computes ATS score, extracts missing keywords, and lists improvements using Python string operations.
+    Supports specialized weightage for technical keywords to ensure score dynamically reflects the resume's match.
     """
+    TECH_KEYWORDS = {
+        'python', 'javascript', 'typescript', 'java', 'c++', 'c#', 'golang', 'rust', 'php', 'ruby', 'swift', 'kotlin',
+        'react', 'angular', 'vue', 'nextjs', 'nodejs', 'express', 'django', 'flask', 'fastapi', 'laravel', 'spring',
+        'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'git', 'github', 'gitlab', 'terraform', 'ansible',
+        'postgresql', 'mysql', 'sqlite', 'mongodb', 'redis', 'cassandra', 'elasticsearch', 'dynamodb',
+        'graphql', 'rest', 'soap', 'grpc', 'tailwind', 'bootstrap', 'sass', 'webpack', 'babel', 'vite',
+        'redux', 'rxjs', 'numpy', 'pandas', 'scikit-learn', 'tensorflow', 'pytorch', 'keras',
+        'agile', 'scrum', 'devops', 'ci/cd', 'tdd', 'microservices', 'serverless', 'web3', 'blockchain',
+        'solidity', 'figma', 'typescript', 'jest', 'cypress', 'testing', 'graphql', 'html', 'css', 'sass'
+    }
+
     def get_keywords(text):
         # find alphanumeric words of 3+ letters, lowercase
         words = re.findall(r'\b[a-zA-Z0-9_]{3,}\b', text.lower())
@@ -96,7 +108,10 @@ def calculate_ats_score(resume_text: str, job_description: str):
             'all', 'any', 'one', 'use', 'out', 'into', 'been', 'has', 'had', 'its',
             'who', 'whom', 'whose', 'which', 'what', 'when', 'where', 'why', 'how',
             'about', 'more', 'some', 'other', 'been', 'here', 'there', 'than', 'them',
-            'would', 'should', 'could', 'their', 'into', 'also', 'some'
+            'would', 'should', 'could', 'their', 'into', 'also', 'some', 'were', 'had',
+            'have', 'experience', 'skills', 'development', 'project', 'work', 'team',
+            'responsibilities', 'application', 'system', 'design', 'implement', 'support',
+            'using', 'used', 'created', 'built', 'managed', 'led'
         }
         return {w for w in words if w not in stop_words and not w.isdigit()}
 
@@ -109,9 +124,19 @@ def calculate_ats_score(resume_text: str, job_description: str):
     missing = sorted(list(jd_words - resume_words))
     overlap = jd_words.intersection(resume_words)
     
-    ats_score = int(len(overlap) / len(jd_words) * 100)
-    # normalize score between 45 and 95 to look realistic
-    ats_score = max(45, min(92, ats_score))
+    jd_tech = jd_words.intersection(TECH_KEYWORDS)
+    resume_tech = resume_words.intersection(TECH_KEYWORDS)
+    
+    if jd_tech:
+        # 70% weightage to technical stack keywords overlap, 30% to general keywords overlap
+        tech_match_ratio = len(jd_tech.intersection(resume_tech)) / len(jd_tech)
+        general_match_ratio = len(overlap) / len(jd_words)
+        ats_score = int((tech_match_ratio * 0.70 + general_match_ratio * 0.30) * 100)
+    else:
+        ats_score = int(len(overlap) / len(jd_words) * 100)
+        
+    # Scale score to be strict, realistic and dynamic between 35 and 95
+    ats_score = max(35, min(95, ats_score))
     
     # Filter missing keywords to return the most meaningful ones (length >= 4)
     meaningful_missing = [w for w in missing if len(w) >= 4][:12]
@@ -332,7 +357,7 @@ async def generate_prep_kit(
 
     # 3. Trigger CrewAI pipeline execution
     try:
-        is_sandbox = False
+        is_sandbox = not user_id or user_id.startswith("sandbox") or user_id.startswith("mock")
         
         # Truncate inputs for LLM processing to reduce tokens
         resume_text_truncated = resume_text[:3500]
@@ -569,7 +594,7 @@ async def chat_endpoint(req: ChatRequest):
     """
     try:
         # Check if the user is in sandbox mode (reject chat request for guest users)
-        is_sandbox = False
+        is_sandbox = not req.user_id or req.user_id.startswith("sandbox") or req.user_id.startswith("mock")
         if is_sandbox:
             raise HTTPException(status_code=403, detail="AI Mentor Chat is a premium feature. Please create an account to start an interactive strategy session.")
 
