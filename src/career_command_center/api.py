@@ -142,7 +142,7 @@ def get_supabase_headers():
 def generate_resume_summary(resume_text: str) -> dict:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     api_key = gemini_api_key or os.getenv("GROQ_API_KEY")
-    model_name = "gemini/gemini-1.5-flash" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
+    model_name = "gemini/gemini-1.5-flash-latest" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
     
     prompt = f"""You are a professional recruiting assistant. Extract a structured JSON summary from this candidate's resume text.
 RESUME TEXT:
@@ -285,7 +285,7 @@ def query_router(message: str) -> str | None:
 def generate_history_summary(messages: list[ChatMessage]) -> str:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     api_key = gemini_api_key or os.getenv("GROQ_API_KEY")
-    model_name = "gemini/gemini-1.5-flash" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
+    model_name = "gemini/gemini-1.5-flash-latest" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant")
     
     conversation_text = ""
     for msg in messages:
@@ -549,7 +549,7 @@ async def chat_endpoint(req: ChatRequest):
         # 2. Get API credentials & resolve models
         gemini_api_key = os.getenv("GEMINI_API_KEY")
         if gemini_api_key:
-            model_name = os.getenv("CHAT_MODEL_NAME", "gemini/gemini-1.5-flash")
+            model_name = os.getenv("CHAT_MODEL_NAME", "gemini/gemini-1.5-flash-latest")
             api_key = gemini_api_key
         else:
             # Fallback to Groq if Gemini API Key is not set
