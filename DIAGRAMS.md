@@ -125,7 +125,7 @@ flowchart TD
 
 ## 4. User Flow Architecture Diagram
 
-This diagram tracks the step-by-step journey of a job candidate, showing how they navigate the application states, and illustrating the database integration and RAG features unlocked by Google Login.
+This diagram tracks the step-by-step journey of a job candidate, showing how they navigate the application states, and illustrating the database integration and RAG features unlocked by Google Login, while showing the locks on Sandbox guest sessions.
 
 ```mermaid
 graph TD
@@ -160,17 +160,21 @@ graph TD
     L --> N["Display interactive command results"]
     M --> N
     
-    N --> O["Read Skill Gaps, ATS matches, core, pushback, & salary answers"]
+    %% Feature Authorization
+    N --> O{"User Session Type"}
+    O -->|Guest/Sandbox| P["Accesses only 4 features: Skill Gaps, ATS, Core Questions, Tough Scenarios<br/>Premium features locked: Salary Negotiation, Outreach, Coach Strategy"]
+    O -->|Google Authenticated| Q["Accesses all 8 features: Full roadmaps, Negotiation scripts, Outreach pitches, Coach Strategy"]
     
     %% Chat Interactions
-    N --> P["Initiate chat session with AI Career Mentor"]
-    P --> Q{"User Session Type"}
+    P --> R["Initiate chat session with AI Career Mentor"]
+    Q --> R
+    
+    R --> S{"User Session Type"}
     
     %% Chat RAG retrieval flow
-    Q -->|Guest/Sandbox| R["Utilizes raw text fallback in chat prompts"]
-    Q -->|Google Authenticated| S["Runs hybrid cosine similarity + full-text RAG search<br/>Pulls closest matching database chunks for context"]
+    S -->|Guest/Sandbox| T["AI Mentor Chat is Locked<br/>Prompts user to sign in to access strategy session"]
+    S -->|Google Authenticated| U["AI Mentor Chat is Unlocked<br/>Runs hybrid cosine similarity + full-text RAG search<br/>Pulls closest matching database chunks for context"]
     
-    R --> T["Mentor generates tailored strategic reply"]
-    S --> T
-    T --> U["Candidate reads response and asks follow-ups"]
+    U --> V["Mentor generates tailored strategic reply"]
+    V --> W["Candidate reads response and asks follow-ups"]
 ```
