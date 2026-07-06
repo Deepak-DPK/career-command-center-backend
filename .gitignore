@@ -55,3 +55,7 @@ db.sqlite3-journal
 # CrewAI optimization guide
 crewai_optimization_guide.md
 
+# Local Project FAQ document
+PROJECT_FAQ.md
+
+
