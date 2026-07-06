@@ -4,17 +4,17 @@ This document compiles the submission requirements, project summary, and framewo
 
 ---
 
-## 📄 Project Summary (186 Words)
+## 📄 Project Summary (179 Words)
 
-**Career Command Center** is a full-stack platform for job seekers to align resumes and prep for interviews. It orchestrates a 4-agent CrewAI pipeline:
-1. **Sleuth** (*Resume Intelligence Specialist*): Scans resumes against job descriptions for technical gaps using customized text-extraction tools.
-2. **Recruiter** (*Hiring Manager Simulator*): Generates 5 realistic technical, behavioral, and situational questions.
-3. **Challenger** (*Stress Interview Specialist*): Formulates 3 tough pushback questions and 3 salary screening scenarios.
-4. **Coach** (*Career Strategy Coach*): Synthesizes these insights into a structured markdown action plan.
+**Career Command Center** is a full-stack platform designed to help job seekers optimize their resumes and prepare for tough interviews. The backend runs a sequential workflow featuring four custom CrewAI agents:
+1. **Sleuth** (*Resume Analyst*): Detects skill gaps and resume weaknesses using custom PDF text-extraction tools.
+2. **Recruiter** (*Hiring Simulator*): Generates 5 realistic technical and behavioral interview questions.
+3. **Challenger** (*Stress Tester*): Formulates 3 high-pressure pushback questions and 3 salary screening scenarios.
+4. **Coach** (*Career Advisor*): Compiles these insights into a structured markdown study roadmap.
 
-The system implements hybrid **RAG (Retrieval-Augmented Generation)** by chunking, embedding (Google `text-embedding-004`), and storing resumes in Supabase pgvector tables. During active chat sessions, a custom hybrid cosine similarity and full-text search retrieves matching chunks to ground the AI Career Mentor. Firebase Auth secures candidate sessions, while a client-side sessionStorage fallback manages guest mode.
+We implement **Retrieval-Augmented Generation (RAG)** by segmenting, embedding, and storing resumes in Supabase PostgreSQL tables using Google's `text-embedding-004` model. An interactive mentor chat then uses similarity vector searches to pull relevant resume chunks and ground conversation responses.
 
-We chose a multi-agent system over a single ChatGPT prompt because separate expert personas (ATS screener, mock interviewer, hostile reviewer, and strategy coach) require distinct instructions, dependencies, and sequential context routing. The output of one agent serves as the input to the next, preventing context dilution, token bloat, and yielding deeply structured, highly personalized preparation results.
+Using multiple specialized agents is superior to a single ChatGPT prompt because each agent operates with distinct expert instructions and dependencies. One agent's output sequentially feeds into the next, which prevents context loss, resolves token bottlenecks, and delivers deeply personalized, modular preparation kits that a single prompt cannot replicate.
 
 ---
 
