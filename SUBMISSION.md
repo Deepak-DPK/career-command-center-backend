@@ -4,17 +4,17 @@ This document compiles the submission requirements, project summary, and framewo
 
 ---
 
-## 📄 Project Summary (164 Words)
+## 📄 Project Summary (186 Words)
 
-**Career Command Center** is a full-stack platform for job seekers to optimize resumes and prep for interviews. It orchestrates a 4-agent CrewAI pipeline:
+**Career Command Center** is a full-stack platform for job seekers to align resumes and prep for interviews. It orchestrates a 4-agent CrewAI pipeline:
 1. **Sleuth** (*Resume Intelligence Specialist*): Scans resumes against job descriptions for technical gaps using customized text-extraction tools.
-2. **Recruiter** (*Hiring Manager Simulator*): Generates 5 realistic technical and behavioral questions.
-3. **Challenger** (*Stress Interview Specialist*): Formulates 3 tough pushback and salary negotiation queries.
-4. **Coach** (*Career Strategy Coach*): Synthesizes findings into a markdown strategy report.
+2. **Recruiter** (*Hiring Manager Simulator*): Generates 5 realistic technical, behavioral, and situational questions.
+3. **Challenger** (*Stress Interview Specialist*): Formulates 3 tough pushback questions and 3 salary screening scenarios.
+4. **Coach** (*Career Strategy Coach*): Synthesizes these insights into a structured markdown action plan.
 
-The system implements hybrid **RAG (Retrieval-Augmented Generation)** by chunking, embedding (Google `text-embedding-004`), and storing resumes in Supabase pgvector. In chat, a hybrid cosine similarity + full-text search retrieves matching resume chunks to ground the AI Career Mentor.
+The system implements hybrid **RAG (Retrieval-Augmented Generation)** by chunking, embedding (Google `text-embedding-004`), and storing resumes in Supabase pgvector tables. During active chat sessions, a custom hybrid cosine similarity and full-text search retrieves matching chunks to ground the AI Career Mentor. Firebase Auth secures candidate sessions, while a client-side sessionStorage fallback manages guest mode.
 
-We use multiple agents rather than a single prompt because different agents represent separate expert personas (screener, hostile interviewer, executive coach) that require unique system instructions, task dependencies, and sequential data refinement (one agent's output serves as the next agent's context) to produce targeted prep kits without context dilution.
+We chose a multi-agent system over a single ChatGPT prompt because separate expert personas (ATS screener, mock interviewer, hostile reviewer, and strategy coach) require distinct instructions, dependencies, and sequential context routing. The output of one agent serves as the input to the next, preventing context dilution, token bloat, and yielding deeply structured, highly personalized preparation results.
 
 ---
 
