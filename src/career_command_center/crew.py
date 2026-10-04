@@ -6,16 +6,26 @@ from crewai.knowledge.source.text_file_knowledge_source import TextFileKnowledge
 
 def get_llm():
     """
-    Returns the Groq Llama 3.1 8B LLM (configured for Free Tier limits). Raises an error if GROQ_API_KEY is not defined.
+    Returns the LLM for CrewAI agents.
+    Uses Gemini (primary) or Groq (fallback).
     """
+    gemini_api_key = os.getenv("GEMINI_API_KEY")
     groq_api_key = os.getenv("GROQ_API_KEY")
-    if not groq_api_key:
-        raise ValueError("CRITICAL: GROQ_API_KEY environment variable is not configured in the environment.")
-    return LLM(
-        model=os.getenv("MODEL_NAME", "groq/llama3-70b-8192"),
-        api_key=groq_api_key,
-        temperature=0.3
-    )
+
+    if gemini_api_key:
+        return LLM(
+            model=os.getenv("MODEL_NAME", "gemini/gemini-2.0-flash"),
+            api_key=gemini_api_key,
+            temperature=0.3
+        )
+    elif groq_api_key:
+        return LLM(
+            model=os.getenv("MODEL_NAME", "groq/llama3-70b-8192"),
+            api_key=groq_api_key,
+            temperature=0.3
+        )
+    else:
+        raise ValueError("CRITICAL: Neither GEMINI_API_KEY nor GROQ_API_KEY is configured.")
 
 @CrewBase
 class CareerCommandCenterCrew:
