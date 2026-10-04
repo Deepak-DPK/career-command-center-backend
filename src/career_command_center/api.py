@@ -168,7 +168,7 @@ def get_supabase_headers():
 def generate_resume_summary(resume_text: str) -> dict:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     api_key = gemini_api_key or os.getenv("GROQ_API_KEY")
-    model_name = "gemini/gemini-1.5-flash" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama-3.3-70b-versatile")
+    model_name = "gemini/gemini-1.5-flash" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama3-70b-8192")
     
     prompt = f"""You are a professional recruiting assistant. Extract a structured JSON summary from this candidate's resume text.
 RESUME TEXT:
@@ -311,7 +311,7 @@ def query_router(message: str) -> str | None:
 def generate_history_summary(messages: list[ChatMessage]) -> str:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     api_key = gemini_api_key or os.getenv("GROQ_API_KEY")
-    model_name = "gemini/gemini-1.5-flash" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama-3.3-70b-versatile")
+    model_name = "gemini/gemini-1.5-flash" if gemini_api_key else os.getenv("MODEL_NAME", "groq/llama3-70b-8192")
     
     conversation_text = ""
     for msg in messages:
@@ -608,7 +608,7 @@ async def chat_endpoint(req: ChatRequest):
             groq_api_key = os.getenv("GROQ_API_KEY")
             if not groq_api_key:
                 raise HTTPException(status_code=500, detail="Neither GEMINI_API_KEY nor GROQ_API_KEY is configured in the environment.")
-            model_name = os.getenv("MODEL_NAME", "groq/llama-3.3-70b-versatile")
+            model_name = os.getenv("MODEL_NAME", "groq/llama3-70b-8192")
             api_key = groq_api_key
 
         # 3. Retrieve relevant resume chunks (RAG)
@@ -704,7 +704,7 @@ Instructions:
             if not groq_api_key:
                 raise primary_err
             
-            fallback_model = os.getenv("MODEL_NAME", "groq/llama-3.3-70b-versatile")
+            fallback_model = os.getenv("MODEL_NAME", "groq/llama3-70b-8192")
             response = completion(
                 model=fallback_model,
                 messages=messages,
