@@ -12,7 +12,7 @@ def get_llm():
     if not groq_api_key:
         raise ValueError("CRITICAL: GROQ_API_KEY environment variable is not configured in the environment.")
     return LLM(
-        model=os.getenv("MODEL_NAME", "groq/llama-3.1-8b-instant"),
+        model=os.getenv("MODEL_NAME", "groq/llama-3.3-70b-versatile"),
         api_key=groq_api_key,
         temperature=0.3
     )
