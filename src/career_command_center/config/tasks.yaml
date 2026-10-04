@@ -2,76 +2,91 @@
 resume_analysis:
   description: |
     Analyze the candidate's resume text against the target job description.
-    
+
     Resume:
     {resume_text}
-    
+
     Job:
     {job_description}
-    
+
     Instructions:
-    - Extract technical skill gaps and weaknesses.
-    - Identify missing keywords from the job description.
-    - Provide a preliminary ATS match score.
+    - Identify 3-6 specific skill gaps where the job description requires something the resume does not demonstrate.
+    - Extract important keywords, technologies, certifications, or domain terms present in the job description but absent from the resume.
+    - Each skill gap must reference a specific requirement from the job description and explain why the resume falls short.
+    - Do NOT include generic gaps. Every gap must be grounded in the actual texts provided.
     - Return a structured JSON object.
   expected_output: |
-    A valid JSON object with keys:
+    A valid JSON object with exactly these keys:
     {
-      "skill_gaps": ["list of identified skill gaps"],
-      "missing_keywords": ["list of missing keywords"],
-      "ats_score": 85
+      "skill_gaps": ["Gap 1: specific mismatch description", "Gap 2: ..."],
+      "missing_keywords": ["keyword1", "keyword2", "keyword3"]
     }
+    Do NOT include an ats_score field. Do NOT wrap in markdown code blocks.
   agent: sleuth
 
 interview_questions:
   description: |
-    Generate exactly 5 realistic interview questions based on the candidate's profile and the job description:
-    - 2 technical questions (evaluating candidate's actual projects/skills).
-    - 2 behavioral questions (STAR-method prompts).
-    - 1 scenario-based question (day-one work situation).
-    
-    Prefix each question with its type label, e.g., "[Technical]", "[Behavioral]", "[Scenario]".
+    Based on the resume analysis results and the original job description, generate exactly 5 realistic interview questions that a hiring manager would ask this specific candidate.
+
+    Requirements:
+    - 2 technical questions that probe the candidate's claimed projects and skills, referencing specific technologies or accomplishments from the resume.
+    - 2 behavioral questions using STAR-method prompts that target the identified skill gaps or leadership/collaboration areas.
+    - 1 scenario-based question simulating a realistic day-one work situation for this role.
+
+    Each question must be tailored to THIS candidate and THIS role — not generic.
+    Prefix each question with its type label: "[Technical]", "[Behavioral]", or "[Scenario]".
     Return the questions as a JSON array of strings.
   expected_output: |
-    A JSON array of exactly 5 strings, e.g.:
-    [
-      "[Technical] Question text...",
-      "[Behavioral] Question text...",
-      ...
-    ]
+    A JSON array of exactly 5 strings. No wrapping object, no markdown code blocks.
+    Example format:
+    ["[Technical] How did you handle...", "[Behavioral] Tell me about a time..."]
   agent: recruiter
   context:
     - resume_analysis
 
 challenger_questions:
   description: |
-    Generate exactly 3 tough pushback questions targeting candidate weaknesses, and exactly 3 salary negotiation questions simulating HR screening conversation.
-    
+    Based on the identified skill gaps and resume weaknesses, generate tough interview challenges.
+
+    Generate exactly 3 pushback questions that:
+    - Target the weakest areas of the candidate's profile relative to the job requirements.
+    - Are confrontational but professional, the kind a skeptical senior interviewer would ask.
+    - Reference specific gaps (e.g., missing technologies, lack of scale experience, career transitions).
+
+    Generate exactly 3 salary negotiation questions that:
+    - Simulate realistic HR screening conversation about compensation.
+    - Include at least one question about salary expectations, one about current/past compensation, and one about competing offers or timeline.
+
     Return these questions in a structured JSON object.
   expected_output: |
-    A valid JSON object with keys:
+    A valid JSON object with exactly these keys:
     {
-      "pushback_questions": ["pushback q1", "pushback q2", "pushback q3"],
-      "salary_questions": ["salary q1", "salary q2", "salary q3"]
+      "pushback_questions": ["question1", "question2", "question3"],
+      "salary_questions": ["question1", "question2", "question3"]
     }
+    Do NOT wrap in markdown code blocks.
   agent: challenger
   context:
     - resume_analysis
 
 coach_report:
   description: |
-    Generate a comprehensive interview preparation mentor report.
-    Include the following markdown sections:
-    - Executive Summary
-    - Strengths to Lead With
-    - STAR Method Answer Frameworks (for each of the 5 interview questions, referencing real projects from the resume)
-    - Handling Tough Questions (strategies for the 3 pushback questions)
-    - Salary Negotiation Strategy
-    - Weakness Reframing
-    - Mindset & Confidence Tips
-    - Final Study Roadmap
+    Using all prior analysis (skill gaps, interview questions, pushback scenarios), generate a comprehensive interview preparation mentor report for this candidate.
+
+    The report must be written in clean Markdown and include these sections:
+    - **Executive Summary**: 2-3 paragraph overview of the candidate's positioning and key strategic moves.
+    - **Strengths to Lead With**: Specific strengths from the resume to emphasize during the interview.
+    - **STAR Method Answer Frameworks**: For each of the 5 interview questions, provide a structured answer outline referencing real projects and achievements from the resume.
+    - **Handling Tough Questions**: Tactical strategies for each of the 3 pushback questions with suggested response angles.
+    - **Salary Negotiation Strategy**: Compensation positioning advice specific to the role level and industry.
+    - **Weakness Reframing**: How to reframe each identified skill gap as a growth opportunity or transferable strength.
+    - **Mindset & Confidence Tips**: Pre-interview mental preparation strategies.
+    - **30-Second Elevator Pitch**: A custom pitch this candidate can use to open the interview.
+
+    Reference specific details from the candidate's resume throughout. Do not give generic advice.
   expected_output: |
-    A detailed markdown preparation report with 8 structured sections.
+    A detailed markdown preparation report with 8 structured sections using ## headers.
+    Write in professional, encouraging tone. Use bullet points and bold text for emphasis.
   agent: coach
   context:
     - resume_analysis

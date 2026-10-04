@@ -441,15 +441,10 @@ async def generate_prep_kit(
 
         # 5. Hybrid logic: Calculate ATS score, missing keywords & improvements via Python
         py_ats_score, py_missing_keywords, py_improvements = calculate_ats_score(resume_text, job_description)
-        
-        # Merge Sleuth and Python outputs for robustness
+
+        # Use Python-calculated score (dynamic and reliable) instead of agent-provided score
         final_ats_score = py_ats_score
-        if gap_data and "ats_score" in gap_data:
-            try:
-                final_ats_score = int(gap_data["ats_score"])
-            except Exception:
-                pass
-                
+
         combined_missing_keywords = list(set(py_missing_keywords + gap_data.get("missing_keywords", [])))
         
         ats_analysis = {
