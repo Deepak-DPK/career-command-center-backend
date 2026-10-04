@@ -1,46 +1,135 @@
-# Career Command Center (CCC)
+# Career Command Center — Backend API
 
-The **Career Command Center (CCC)** is an advanced AI-powered career optimization and interview preparation intelligence suite. Its goal is to empower job seekers by providing real-time, personalized analysis of their resumes against target job descriptions, simulating high-pressure interviews, scripting salary negotiation frameworks, and offering an interactive AI Career Mentor.
+The backend service powering the Career Command Center, an AI-driven interview preparation suite. Built with FastAPI and CrewAI multi-agent orchestration.
 
----
-
-## 🌟 Core Purpose & Mission
-
-Modern technical hiring is complex, requiring candidates to pass automated ATS screening, align with precise job criteria, answer tough behavioral questions, navigate salary expectations, and demonstrate subject-matter expertise. 
-
-The Career Command Center acts as a strategic briefing room that translates a candidate's resume and target job descriptions into a complete prep dossier. It helps candidates identify their weaknesses, optimize their profile, prepare for stress scenarios, and strategize their compensation.
+**Frontend Repository**: [career-command-center](https://github.com/Deepak-DPK/career-command-center)
 
 ---
 
-## 🛠️ Key Features
+## Features
 
-The dashboard provides a suite of interactive, specialized resources divided into core panels:
-
-1. **Skill Gaps Analysis**: Scans the candidate's resume against the job description to pinpoint technical, domain, and soft skill discrepancies.
-2. **ATS Match & Optimization**: Evaluates the resume using automated screening criteria, calculates an ATS match score, identifies missing keywords, and lists improvement suggestions.
-3. **Core Interview Simulator**: Generates role-specific questions divided into technical skills, behavioral performance (STAR method), and situational day-one situational situations.
-4. **Tough Scenarios (Stress Questions)**: Anticipates difficult pushback questions targeting gaps in work history, lack of specific framework experience, or resume weak points.
-5. **Salary Negotiation Talk Track**: Formulates market-aligned target ranges, lists negotiation tips, and builds scripts to handle compensation trap questions.
-6. **Professional Outreach Templates**: Scripts cold emails, LinkedIn connection messages, and post-interview thank you notes tailored to the target role.
-7. **Executive Coach Strategy**: Synthesizes the overall assessment into an interview battle plan, detailed roadmaps, and confidence-building advice.
-8. **Interactive AI Career Mentor**: A real-time conversational mentor that references the uploaded resume, target job details, and preparation files to answer strategy queries.
+- **Multi-Agent CrewAI Pipeline** — Four specialized AI agents collaborate sequentially to analyze resumes and generate career strategy packages.
+- **Hybrid ATS Scoring** — Python-based keyword matching with weighted technical keyword analysis for accurate, dynamic ATS scores.
+- **RAG-Powered AI Chat** — Resume chunks embedded via Gemini and stored in Supabase pgvector for hybrid similarity + full-text search retrieval.
+- **PDF Resume Parsing** — Extracts and processes text from uploaded PDF resumes.
+- **Smart Query Router** — Fast-bypasses the LLM for simple greetings and common messages.
+- **Session History Management** — Summarizes long conversation histories and maintains sliding context windows.
 
 ---
 
-## 💻 Tech Stack & Integrations
+## AI Agents
 
-The system is built on a modern, decoupled stack:
+| Agent | Role | Responsibility |
+|-------|------|----------------|
+| **Sleuth** | Resume Intelligence Specialist | Compares resume vs job description to detect skill gaps and missing keywords |
+| **Recruiter** | Hiring Manager Simulator | Generates tailored technical, behavioral, and scenario interview questions |
+| **Challenger** | Stress Interview Specialist | Creates tough pushback questions and salary negotiation scenarios |
+| **Coach** | Career Strategy Coach | Synthesizes all insights into a comprehensive interview battle plan |
 
-### Frontend
-- **React & TypeScript**: Powers the responsive single-page dashboard.
-- **TailwindCSS**: Delivers a premium dark-themed SaaS aesthetic with custom glassmorphism layers, glow indicators, and animations.
-- **Framer Motion**: Handles transitions, tab switching, and fade-in states.
+---
 
-### Backend
-- **FastAPI**: Serves high-speed API routes, handles file uploads, and directs chatbot requests.
-- **CrewAI**: Manages a collaborative multi-agent pipeline where AI agents exchange context to execute sequential tasks.
-- **LiteLLM**: Handles model routing, enabling support for Google Gemini models and automatic fallback to Groq Llama models during API interruptions.
+## Tech Stack
 
-### Infrastructure & Data Layer
-- **Supabase**: Handles database storage and vector search. When users log in, resumes are chunked and mapped to vector embeddings for similarity-based chat retrieval.
-- **Firebase Auth**: Manages secure user authentication. The system supports a Sandbox mode that runs locally using session cache when Firebase is not active.
+| Layer | Technology |
+|-------|-----------|
+| Framework | FastAPI, Python 3.10+ |
+| AI Orchestration | CrewAI 1.15 |
+| LLM Provider | Google Gemini (primary), Groq (fallback) |
+| LLM Routing | LiteLLM |
+| Embeddings | Gemini text-embedding-004 |
+| Database | Supabase (PostgreSQL + pgvector) |
+| PDF Parsing | pypdf |
+| Hosting | Render |
+
+---
+
+## Project Structure
+
+```
+src/career_command_center/
+├── api.py              # FastAPI routes (/generate-prep-kit, /chat)
+├── crew.py             # CrewAI agent and task definitions
+├── main.py             # CLI entry points (run, train, api)
+├── config/
+│   ├── agents.yaml     # Agent roles, goals, and backstories
+│   └── tasks.yaml      # Task prompts and expected outputs
+├── tools/
+│   └── custom_tool.py  # Custom CrewAI tools
+└── __init__.py
+```
+
+---
+
+## API Endpoints
+
+### `POST /generate-prep-kit`
+
+Generates a complete career preparation kit.
+
+**Request**: `multipart/form-data`
+- `resume` (file) — PDF resume file
+- `job_description` (string) — Target job description
+- `user_id` (string, optional) — User ID for database storage
+
+**Response**: JSON object containing skill_gaps, ats_analysis, questions, pushback_questions, salary_negotiation, coach_report, and outreach_assets.
+
+### `POST /chat`
+
+Interactive AI career mentor chat with RAG context.
+
+**Request**: JSON
+- `message` (string) — User message
+- `history` (array) — Chat history
+- `resume_text` (string) — Resume context
+- `job_description` (string) — Job description context
+- `resume_id` (string, optional) — For RAG vector retrieval
+- `user_id` (string) — Required (premium feature)
+
+**Response**: `{ "reply": "..." }`
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.10+
+- pip
+
+### Installation
+
+```bash
+git clone https://github.com/Deepak-DPK/career-command-center-backend.git
+cd career-command-center-backend
+pip install -r requirements.txt
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GEMINI_API_KEY` | Yes | Google Gemini API key (powers agents, chat, and embeddings) |
+| `GROQ_API_KEY` | Optional | Groq API key (fallback if Gemini is not set) |
+| `SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key |
+| `MODEL_NAME` | Optional | Override default LLM model (default: `gemini/gemini-2.0-flash`) |
+| `CHAT_MODEL_NAME` | Optional | Override chat model (default: `gemini/gemini-2.0-flash`) |
+
+### Run Locally
+
+```bash
+PYTHONPATH=src python -m uvicorn career_command_center.api:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Deploy on Render
+
+| Setting | Value |
+|---------|-------|
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `PYTHONPATH=src python -m uvicorn career_command_center.api:app --host 0.0.0.0 --port $PORT` |
+
+---
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
